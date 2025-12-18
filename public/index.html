@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <title>DiscList - Vinyl Record Collection</title>
+</head>
+<body>
+    <!-- Vue app container - all Vue components are inside this div -->
+    <div id="app">
+        <!-- Login View - only shown when currentView is 'login' 
+             v-if  renders elements based on the expression -->
+        <div v-if="currentView === 'login'" class="auth-page">
+            <div class="auth-container">
+                <div class="auth-box">
+                    <!-- Logo title for the login page -->
+                    <h1 class="logo">DiscList</h1>
+                    <p>Find, collect and share your favorite vinyl records</p>
+                    
+                    <!-- Login form - @submit.prevent stops the default form submission 
+                         and calls the login method instead -->
+                    <form @submit.prevent="login" class="auth-form">
+                        <div class="form-group">
+                            <label for="loginEmail">Email</label>
+                            <!-- v-model creates two-way binding between input and variable -->
+                            <input type="email" id="loginEmail" v-model="loginData.email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="loginPassword">Password</label>
+                            <input type="password" id="loginPassword" v-model="loginData.password" required>
+                        </div>
+                        
+                        <!-- Error message display - only appears when loginError has a value -->
+                        <div v-if="loginError" class="error-message">{{ loginError }}</div>
+                        
+                        <button type="submit" class="auth-button">Log in</button>
+                    </form>
+                    
+                    <!-- Link to switch to signup view 
+                         @click.prevent prevents default anchor behavior and sets the view -->
+                    <p class="auth-redirect">Don't have an account? 
+                        <a href="#" @click.prevent="currentView = 'signup'" class="auth-link">Sign up</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Signup View - similar structure to login but with more fields -->
+        <div v-if="currentView === 'signup'" class="auth-page">
+            <div class="auth-container">
+                <div class="auth-box">
+                    <h1 class="logo">DiscList</h1>
+                    <p>Join the vinyl revolution</p>
+                    
+                    <form @submit.prevent="signup" class="auth-form">
+                        <!-- Multiple form groups for registration data -->
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" v-model="signupData.firstName" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" v-model="signupData.lastName" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="userName">Username</label>
+                            <input type="text" id="userName" v-model="signupData.userName" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="signupEmail">Email</label>
+                            <input type="email" id="signupEmail" v-model="signupData.email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="signupPassword">Password</label>
+                            <input type="password" id="signupPassword" v-model="signupData.password" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <input type="password" id="confirmPassword" v-model="signupData.confirmPassword" required>
+                        </div>
+                        
+                        <div v-if="signupError" class="error-message">{{ signupError }}</div>
+                        
+                        <button type="submit" class="auth-button">Create Account</button>
+                    </form>
+                    
+                    <p class="auth-redirect">Already have an account? 
+                        <a href="#" @click.prevent="currentView = 'login'" class="auth-link">Log in</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main App View -->
+        <div v-if="currentView === 'main'">
+            <!-- Header with logo, search, and controls -->
+            <header class="app-header">
+                <div class="logo-container">
+                    <h1 class="logo">DiscList</h1>
+                </div>
+                <div class="search-container">
+                    <!-- Search input with v-model for real-time filtering -->
+                    <input type="text" placeholder="Search records..." class="search-bar" v-model="searchQuery">
+                </div>
+                <div class="header-controls">
+                    <!-- Login button - only shown when user is not logged in 
+                         fas = Font Awesome Solid icon style -->
+                    <button class="icon-button" @click="showLoginForm" v-if="!user">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <!-- Menu button - toggles the side menu 
+                         ! operator inverts the current boolean value -->
+                    <button class="icon-button" id="menuButton" @click="showMenu = !showMenu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Store Banner - displays a record store image with overlay text -->
+            <div class="store-banner">
+                <!-- :src is the v-bind shorthand to bind an attribute to a data property -->
+                <img :src="storeImage" alt="Vintage Record Store">
+                <div class="banner-overlay">
+                    <h2>DiscList</h2>
+                    <p>Your digital vinyl collection</p>
+                </div>
+            </div>
+            
+            <!-- View Tabs - navigation between different views -->
+            <div class="view-tabs">
+                <div class="tab-container">
+                    <!-- Tab buttons - :class assigns the 'active' class 
+                         when the current tab matches -->
+                    <button class="tab-button" 
+                            :class="{ active: activeTab === 'all' }"
+                            @click="setActiveTab('all')">
+                        All Records
+                    </button>
+                    <button class="tab-button" 
+                            :class="{ active: activeTab === 'collection' }"
+                            @click="setActiveTab('collection')">
+                        My Collection
+                    </button>
+                    <button class="tab-button" 
+                            :class="{ active: activeTab === 'wantlist' }"
+                            @click="setActiveTab('wantlist')">
+                        Want List
+                    </button>
+                </div>
+                <button class="filter-button">
+                    <i class="fas fa-filter"></i>
+                </button>
+            </div>
+            
+            <!-- Login Required Notice - shown when trying to access restricted tabs -->
+            <div class="login-notice" v-if="(activeTab === 'collection' || activeTab === 'wantlist') && !user">
+                <p>Please <a href="#" @click.prevent="showLoginForm">log in</a> to view your {{ activeTab === 'collection' ? 'collection' : 'want list' }}.</p>
+            </div>
+            
+            <!-- Main Content Section - displays vinyl records based on selected tab -->
+            <div class="content-section" v-if="activeTab === 'all' || (user && (activeTab === 'collection' || activeTab === 'wantlist'))">
+                <!-- Section title changes based on active tab -->
+                <h2 class="section-title">{{ activeTab === 'all' ? 'Browse Records' : (activeTab === 'collection' ? 'My Collection' : 'Want List') }}</h2>
+                
+                <!-- Vinyl Grid - displays records in a responsive grid layout -->
+                <div class="vinyl-grid">
+                    <!-- v-for loops through filtered vinyl records -->
+                    <div v-for="vinyl in displayedVinyls" :key="vinyl._id" class="vinyl-card">
+                        <!-- Record cover - clickable to view details -->
+                        <div class="vinyl-cover" @click="viewVinylDetails(vinyl)">
+                            <!-- Conditional display of image or placeholder -->
+                            <img v-if="vinyl.vinylCover" :src="vinyl.vinylCover" :alt="vinyl.album">
+                            <div v-else class="placeholder-cover">
+                                <i class="fas fa-record-vinyl"></i>
+                            </div>
+                        </div>
+                        <!-- Record info section -->
+                        <div class="vinyl-info">
+                            <p class="vinyl-title">{{ vinyl.album }}</p>
+                            <p class="vinyl-artist">{{ vinyl.artist }}</p>
+                            
+                            <!-- Rating display - only shown in collection tab and if rated -->
+                            <div v-if="activeTab === 'collection' && vinyl.userRating" class="vinyl-rating">
+                                <p class="rating-label">Rating:</p>
+                                <!-- Star rating system using Font Awesome -->
+                                <div class="stars">
+                                    <!-- Loop to create 5 stars, filled based on rating -->
+                                    <i v-for="n in 5" :key="n"
+                                       :class="['fas', n <= vinyl.userRating ? 'fa-star' : 'fa-star-o']"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Action buttons for each record -->
+                        <div class="vinyl-actions">
+                            <!-- Collection toggle button - only for logged in users -->
+                            <button class="action-button" v-if="user" @click="toggleCollection(vinyl)" 
+                                    :title="isInCollection(vinyl) ? 'Remove from collection' : 'Add to collection'">
+                                <!-- Icon changes based on collection status -->
+                                <i :class="['fas', isInCollection(vinyl) ? 'fa-check-circle' : 'fa-plus-circle']"></i>
+                            </button>
+                            <!-- Want list toggle button - only for logged in users -->
+                            <button class="action-button" v-if="user" @click="toggleWantList(vinyl)"
+                                    :title="isInWantList(vinyl) ? 'Remove from want list' : 'Add to want list'">
+                                <i :class="['fas', isInWantList(vinyl) ? 'fa-heart' : 'fa-heart-o']"></i>
+                            </button>
+                            <!-- Options button for all users -->
+                            <button class="action-button" @click="showVinylOptions(vinyl)">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <!-- Admin actions - only shown for admin users -->
+                            <button v-if="isAdmin" class="action-button admin-action" @click.stop="editVinyl(vinyl)" title="Edit record">
+                                <!-- .stop prevents the click from triggering parent elements' click handlers -->
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button v-if="isAdmin" class="action-button admin-action delete-action" @click.stop="confirmDeleteVinyl(vinyl)" title="Delete record">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- No results message -->
+                <p v-if="displayedVinyls.length === 0" class="no-results">
+                    No records found.
+                </p>
+            </div>
+            
+            <!-- Admin Panel - form for adding/editing vinyl records -->
+            <div class="admin-panel" v-if="isAdmin && showAdminPanel">
+                <h2>{{ editMode ? 'Edit Record' : 'Add New Record' }}</h2>
+                
+                <!-- Vinyl form - changes submission function based on edit mode -->
+                <form @submit.prevent="editMode ? updateVinyl() : createVinyl()" class="vinyl-form">
+                    <!-- Album field with required indicator -->
+                    <div class="form-group">
+                        <label for="album">Album: <span class="required">*</span></label>
+                        <input type="text" id="album" v-model="newVinyl.album" required>
+                    </div>
+                    
+                    <!-- Artist field with required indicator -->
+                    <div class="form-group">
+                        <label for="artist">Artist: <span class="required">*</span></label>
+                        <input type="text" id="artist" v-model="newVinyl.artist" required>
+                    </div>
+                    
+                    <!-- Optional fields -->
+                    <div class="form-group">
+                        <label for="vinylVersion">Version:</label>
+                        <input type="text" id="vinylVersion" v-model="newVinyl.vinylVersion">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="upc">UPC:</label>
+                        <input type="number" id="upc" v-model="newVinyl.upc">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="songs">Number of Songs:</label>
+                        <input type="number" id="songs" v-model="newVinyl.songs">
+                    </div>
+                    
+                    <!-- Image upload field with conditional required status -->
+                    <div class="form-group">
+                        <label for="cover">Album Cover: <span v-if="!editMode" class="required">*</span></label>
+                        <!-- :required dynamically sets the required attribute based on conditions -->
+                        <input type="file" id="cover" @change="selectFile" accept="image/*" 
+                               :required="!editMode && !newVinyl.vinylCover">
+                        <!-- Preview of selected image -->
+                        <div v-if="imagePreview" class="image-preview">
+                            <img :src="imagePreview" alt="Preview">
+                        </div>
+                        <!-- Preview of existing image when editing -->
+                        <div v-else-if="newVinyl.vinylCover && !selectedFile" class="image-preview">
+                            <img :src="newVinyl.vinylCover" alt="Current Cover">
+                        </div>
+                    </div>
+                    
+                    <!-- Form action buttons -->
+                    <div class="form-actions">
+                        <button type="submit" :disabled="isUploading">
+                            <span v-if="isUploading">Uploading...</span>
+                            <span v-else>{{ editMode ? 'Update Record' : 'Add Record' }}</span>
+                        </button>
+                        <button v-if="editMode" type="button" @click="cancelEdit" class="cancel-button">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Side Menu - slides in from right when active -->
+            <div class="side-menu" :class="{ 'show': showMenu }">
+                <div class="menu-header">
+                    <!-- Personalized greeting for logged in users -->
+                    <h2 v-if="user">Hello, {{ user.firstName }}</h2>
+                    <h2 v-else>Menu</h2>
+                    <button class="close-menu" @click="showMenu = false">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <!-- Menu navigation items -->
+                <div class="menu-items">
+                    <a href="#" class="menu-item" @click.prevent="setActiveTab('all')">
+                        <i class="fas fa-home"></i> All Records
+                    </a>
+                    <a href="#" class="menu-item" @click.prevent="setActiveTab('collection')">
+                        <i class="fas fa-record-vinyl"></i> My Collection
+                    </a>
+                    <a href="#" class="menu-item" @click.prevent="setActiveTab('wantlist')">
+                        <i class="fas fa-heart"></i> Want List
+                    </a>
+                    <!-- Admin controls menu item - only for admins -->
+                    <a href="#" v-if="isAdmin" @click.prevent="toggleAdminPanel" class="menu-item">
+                        <i class="fas fa-shield-alt"></i> Admin Controls
+                    </a>
+                    <!-- Login/Logout based on user status -->
+                    <a href="#" v-if="!user" @click.prevent="showLoginForm" class="menu-item">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <a href="#" v-if="user" @click.prevent="logout" class="menu-item">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vinyl Details Modal - popup with detailed vinyl information -->
+        <div class="modal" v-if="selectedVinyl">
+            <div class="modal-content">
+                <button class="close-modal" @click="selectedVinyl = null">
+                    <i class="fas fa-times"></i>
+                </button>
+                
+                <div class="vinyl-detail-view">
+                    <!-- Larger cover image display -->
+                    <div class="vinyl-detail-cover">
+                        <img v-if="selectedVinyl.vinylCover" :src="selectedVinyl.vinylCover" :alt="selectedVinyl.album">
+                        <div v-else class="placeholder-cover large">
+                            <i class="fas fa-record-vinyl"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Detailed vinyl information -->
+                    <div class="vinyl-detail-info">
+                        <h2>{{ selectedVinyl.album }}</h2>
+                        <p class="artist">{{ selectedVinyl.artist }}</p>
+                        
+                        <!-- Information rows - only displayed if the data exists -->
+                        <div v-if="selectedVinyl.vinylVersion" class="detail-row">
+                            <span class="detail-label">Version:</span>
+                            <span>{{ selectedVinyl.vinylVersion }}</span>
+                        </div>
+                        
+                        <div v-if="selectedVinyl.songs" class="detail-row">
+                            <span class="detail-label">Songs:</span>
+                            <span>{{ selectedVinyl.songs }}</span>
+                        </div>
+                        
+                        <div v-if="selectedVinyl.upc" class="detail-row">
+                            <span class="detail-label">UPC:</span>
+                            <span>{{ selectedVinyl.upc }}</span>
+                        </div>
+                        
+                        <!-- Action buttons for logged in users -->
+                        <div v-if="user" class="user-actions">
+                            <button class="action-button large" @click="toggleCollection(selectedVinyl)">
+                                <i :class="['fas', isInCollection(selectedVinyl) ? 'fa-check-circle' : 'fa-plus-circle']"></i>
+                                {{ isInCollection(selectedVinyl) ? 'In Collection' : 'Add to Collection' }}
+                            </button>
+                            
+                            <button class="action-button large" @click="toggleWantList(selectedVinyl)">
+                                <i :class="['fas', isInWantList(selectedVinyl) ? 'fa-heart' : 'fa-heart-o']"></i>
+                                {{ isInWantList(selectedVinyl) ? 'In Want List' : 'Add to Want List' }}
+                            </button>
+                        </div>
+                        
+                        <!-- Disabled rating system for collection items -->
+                        <div v-if="user && isInCollection(selectedVinyl)" class="rating-container">
+                            <p class="rating-label">Rating feature temporarily unavailable</p>
+                            <div class="rating-stars disabled">
+                                <i v-for="n in 5" :key="n" class="fas"
+                                   :class="n <= (selectedVinyl.userRating || 0) ? 'fa-star' : 'fa-star-o'"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Admin actions in detail view -->
+                        <div v-if="isAdmin" class="admin-detail-actions">
+                            <button class="admin-button edit-button" @click="editVinyl(selectedVinyl)">
+                                <i class="fas fa-edit"></i> Edit Record
+                            </button>
+                            <button class="admin-button delete-button" @click="confirmDeleteVinyl(selectedVinyl)">
+                                <i class="fas fa-trash"></i> Delete Record
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Delete Confirmation Modal - safety check before deleting records -->
+        <div class="modal" v-if="showDeleteConfirm">
+            <div class="modal-content confirm-dialog">
+                <h2>Confirm Delete</h2>
+                <!-- ?. is the optional chaining operator to safely access properties -->
+                <p>Are you sure you want to delete "{{ vinylToDelete?.album }}" by {{ vinylToDelete?.artist }}?</p>
+                <p class="warning">This action cannot be undone!</p>
+                
+                <div class="confirm-actions">
+                    <button class="cancel-button" @click="showDeleteConfirm = false">
+                        Cancel
+                    </button>
+                    <button class="delete-button" @click="deleteVinyl">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Toast Messages - temporary notifications -->
+        <!-- Error Toast - red notification for errors -->
+        <div v-if="errorMessage" class="error-toast">
+            {{ errorMessage }}
+            <button @click="errorMessage = ''" class="close-error">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <!-- Success Toast - green notification for successes -->
+        <div v-if="successMessage" class="success-toast">
+            {{ successMessage }}
+            <button @click="successMessage = ''" class="close-success">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
