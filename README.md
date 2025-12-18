@@ -77,4 +77,3 @@ The application uses the browser's local storage to maintain:
 - User's collection of vinyl records
 - User's want list
 - User's ratings of records (couldn't get to work)
-# DiscList
