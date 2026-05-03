@@ -9,6 +9,8 @@ https://disklist-0c5x.onrender.com/
 figma URL: 
 https://www.figma.com/design/paPig7Atemq2SUMG7gYDiI/DiscList?node-id=0-1&t=WbnsSX1SfU1VLs7a-1
 
+<img width="1917" height="870" alt="image" src="https://github.com/user-attachments/assets/1fce27ef-9caf-4bed-9052-d464f02b4cfd" />
+
 ## Features
 
 ### User Features
