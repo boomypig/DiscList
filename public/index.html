@@ -15,11 +15,17 @@
         <div v-if="currentView === 'login'" class="auth-page">
             <div class="auth-container">
                 <div class="auth-box">
+                    <!-- Back to browsing - lets users leave the login screen
+                         without having to refresh the page -->
+                    <button type="button" class="auth-back" @click="backToBrowsing" title="Back to browsing">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+
                     <!-- Logo title for the login page -->
                     <h1 class="logo">DiscList</h1>
                     <p>Find, collect and share your favorite vinyl records</p>
-                    
-                    <!-- Login form - @submit.prevent stops the default form submission 
+
+                    <!-- Login form - @submit.prevent stops the default form submission
                          and calls the login method instead -->
                     <form @submit.prevent="login" class="auth-form">
                         <div class="form-group">
@@ -35,8 +41,11 @@
                         
                         <!-- Error message display - only appears when loginError has a value -->
                         <div v-if="loginError" class="error-message">{{ loginError }}</div>
-                        
-                        <button type="submit" class="auth-button">Log in</button>
+
+                        <button type="submit" class="auth-button" :disabled="isLoggingIn">
+                            <span v-if="isLoggingIn"><i class="fas fa-circle-notch fa-spin"></i> Logging in...</span>
+                            <span v-else>Log in</span>
+                        </button>
                     </form>
                     
                     <!-- Link to switch to signup view 
@@ -52,9 +61,15 @@
         <div v-if="currentView === 'signup'" class="auth-page">
             <div class="auth-container">
                 <div class="auth-box">
+                    <!-- Back to browsing - lets users leave the signup screen
+                         without having to refresh the page -->
+                    <button type="button" class="auth-back" @click="backToBrowsing" title="Back to browsing">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+
                     <h1 class="logo">DiscList</h1>
                     <p>Join the vinyl revolution</p>
-                    
+
                     <form @submit.prevent="signup" class="auth-form">
                         <!-- Multiple form groups for registration data -->
                         <div class="form-group">
@@ -88,8 +103,11 @@
                         </div>
                         
                         <div v-if="signupError" class="error-message">{{ signupError }}</div>
-                        
-                        <button type="submit" class="auth-button">Create Account</button>
+
+                        <button type="submit" class="auth-button" :disabled="isSigningUp">
+                            <span v-if="isSigningUp"><i class="fas fa-circle-notch fa-spin"></i> Creating...</span>
+                            <span v-else>Create Account</span>
+                        </button>
                     </form>
                     
                     <p class="auth-redirect">Already have an account? 
@@ -334,7 +352,8 @@
         </div>
         
         <!-- Vinyl Details Modal - popup with detailed vinyl information -->
-        <div class="modal" v-if="selectedVinyl">
+        <transition name="modal">
+        <div class="modal" v-if="selectedVinyl" @click.self="selectedVinyl = null">
             <div class="modal-content">
                 <button class="close-modal" @click="selectedVinyl = null">
                     <i class="fas fa-times"></i>
@@ -405,9 +424,11 @@
                 </div>
             </div>
         </div>
-        
+        </transition>
+
         <!-- Delete Confirmation Modal - safety check before deleting records -->
-        <div class="modal" v-if="showDeleteConfirm">
+        <transition name="modal">
+        <div class="modal" v-if="showDeleteConfirm" @click.self="showDeleteConfirm = false">
             <div class="modal-content confirm-dialog">
                 <h2>Confirm Delete</h2>
                 <!-- ?. is the optional chaining operator to safely access properties -->
@@ -424,23 +445,28 @@
                 </div>
             </div>
         </div>
-        
+        </transition>
+
         <!-- Toast Messages - temporary notifications -->
         <!-- Error Toast - red notification for errors -->
+        <transition name="toast">
         <div v-if="errorMessage" class="error-toast">
             {{ errorMessage }}
             <button @click="errorMessage = ''" class="close-error">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        
+        </transition>
+
         <!-- Success Toast - green notification for successes -->
+        <transition name="toast">
         <div v-if="successMessage" class="success-toast">
             {{ successMessage }}
             <button @click="successMessage = ''" class="close-success">
                 <i class="fas fa-times"></i>
             </button>
         </div>
+        </transition>
     </div>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>

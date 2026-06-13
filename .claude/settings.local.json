@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la ~ 2>/dev/null; echo \"---PWD---\"; pwd; echo \"---\"; ls -la)",
+      "Bash(P=\"//wsl.localhost/ubuntu/home/boomy/DiscList\"; grep -n \"listen\\\\|PORT\\\\|process.env.PORT\" \"$P/index.js\" | head; echo \"---.env keys---\"; sed 's/=.*/=***/' \"$P/.env\")"
+    ]
+  }
+}

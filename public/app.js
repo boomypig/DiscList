@@ -58,6 +58,8 @@ Vue.createApp({
             // UI state
             showMenu: false,       // Whether side menu is visible
             showAdminPanel: false, // Whether admin panel is visible
+            isLoggingIn: false,    // Whether a login request is in progress
+            isSigningUp: false,    // Whether a signup request is in progress
             
             // Notification messages
             errorMessage: '',   // Current error message to display
@@ -118,6 +120,15 @@ Vue.createApp({
             if (!this.user) {
                 this.currentView = 'login';
             }
+        },
+
+        // Returns from the login/signup screens to browsing without a refresh.
+        // Clears any pending form errors so the screens start fresh next time.
+        backToBrowsing: function() {
+            this.currentView = 'main';
+            this.activeTab = 'all';
+            this.loginError = '';
+            this.signupError = '';
         },
         
         // ---------- COLLECTION MANAGEMENT ----------
@@ -462,7 +473,11 @@ Vue.createApp({
                 this.loginError = 'Please fill in all fields';
                 return;
             }
-            
+
+            // Prevent double submits and drive the button's loading state
+            if (this.isLoggingIn) return;
+            this.isLoggingIn = true;
+
             // Send login request to API
             fetch(`${API_URL}/session`, {
                 method: 'POST',
@@ -490,9 +505,12 @@ Vue.createApp({
             .catch(error => {
                 console.error('Login error:', error);
                 this.loginError = error.message;
+            })
+            .finally(() => {
+                this.isLoggingIn = false;
             });
         },
-        
+
         // Handles user registration
         signup: function() {
             this.signupError = '';
@@ -523,7 +541,11 @@ Vue.createApp({
                 this.signupError = 'Password must be at least 8 characters long';
                 return;
             }
-            
+
+            // Prevent double submits and drive the button's loading state
+            if (this.isSigningUp) return;
+            this.isSigningUp = true;
+
             // Send registration request to API
             fetch(`${API_URL}/users`, {
                 method: 'POST',
@@ -569,9 +591,12 @@ Vue.createApp({
             .catch(error => {
                 console.error('Registration error:', error);
                 this.signupError = error.message;
+            })
+            .finally(() => {
+                this.isSigningUp = false;
             });
         },
-        
+
         // Logs out the current user
         logout: function() {
             fetch(`${API_URL}/session`, {
@@ -818,10 +843,26 @@ Vue.createApp({
     mounted: function() {
         // Handle clicks outside the menu to close it
         document.addEventListener('click', (event) => {
-            if (this.showMenu && 
-                !event.target.closest('.side-menu') && 
+            if (this.showMenu &&
+                !event.target.closest('.side-menu') &&
                 !event.target.closest('#menuButton')) {
                 this.showMenu = false;
+            }
+        });
+
+        // Escape key backs out of the topmost layer without a refresh:
+        // open modals first, then the menu, then the login/signup screens.
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+
+            if (this.selectedVinyl) {
+                this.selectedVinyl = null;
+            } else if (this.showDeleteConfirm) {
+                this.showDeleteConfirm = false;
+            } else if (this.showMenu) {
+                this.showMenu = false;
+            } else if (this.currentView === 'login' || this.currentView === 'signup') {
+                this.backToBrowsing();
             }
         });
     },

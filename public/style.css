@@ -136,6 +136,18 @@
        background-color: var(--dark-brown);
    }
    
+   /* Inline error message inside the login/signup forms */
+   .error-message {
+       background-color: rgba(229, 57, 53, 0.08);
+       border-left: 3px solid #e53935;
+       color: #c62828;
+       font-family: 'Space Mono', monospace;
+       font-size: 0.85rem;
+       padding: 10px 12px;
+       margin-top: 10px;
+       animation: fadeInUp 0.25s ease both;
+   }
+
    .auth-redirect {
        margin-top: 20px;
        font-size: 0.9rem;
@@ -1073,4 +1085,113 @@
    }
 .required {
     color: #e53935;
+}
+
+/* ---------- SMOOTHNESS & TRANSITIONS ---------- */
+
+/* Smooth in-page scrolling (e.g. scroll-to admin panel) */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Gentle entrance for the auth card so login/signup don't pop in abruptly */
+.auth-box {
+    animation: fadeInUp 0.4s ease both;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Back-to-browsing button on the login/signup screens */
+.auth-back {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--medium-green);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    padding: 6px 8px;
+    z-index: 2; /* sit above the radial ::before overlay */
+    transition: color 0.25s, transform 0.25s;
+}
+
+.auth-back:hover {
+    color: var(--warm-brown);
+    transform: translateX(-3px);
+}
+
+/* Loading / disabled state for the auth buttons */
+.auth-button:disabled {
+    background-color: var(--medium-green);
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
+.auth-button i {
+    margin-right: 6px;
+}
+
+/* Spinner animation (Font Awesome fa-spin works, this is a safety net) */
+.fa-spin {
+    animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* Modal enter/leave: backdrop fades, content pops up slightly */
+.modal-enter-active,
+.modal-leave-active {
+    transition: opacity 0.25s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+    opacity: 0;
+}
+
+.modal-enter-active .modal-content,
+.modal-leave-active .modal-content {
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.28s ease;
+}
+
+.modal-enter-from .modal-content,
+.modal-leave-to .modal-content {
+    transform: translateY(20px) scale(0.97);
+    opacity: 0;
+}
+
+/* Toast enter/leave: slide up from the bottom and fade */
+.toast-enter-active,
+.toast-leave-active {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+    opacity: 0;
+    /* keep the toast horizontally centered while it slides up */
+    transform: translateX(-50%) translateY(20px);
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
 }
