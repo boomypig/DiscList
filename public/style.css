@@ -375,6 +375,41 @@
        color: var(--cream);
    }
 
+   /* Glowing "open sign" style tag — a record-store cue */
+   .store-sign {
+       display: inline-flex;
+       align-items: center;
+       gap: 9px;
+       align-self: flex-start;
+       margin-bottom: 16px;
+       padding: 7px 16px 7px 13px;
+       border-radius: 999px;
+       background: rgba(20, 19, 15, 0.55);
+       backdrop-filter: blur(8px);
+       -webkit-backdrop-filter: blur(8px);
+       border: 1px solid rgba(217, 168, 120, 0.4);
+       color: var(--warm-brown-soft);
+       font-family: 'Space Mono', monospace;
+       font-size: 0.78rem;
+       text-transform: uppercase;
+       letter-spacing: 2px;
+       box-shadow: 0 0 24px rgba(198, 139, 89, 0.25);
+   }
+
+   .sign-dot {
+       width: 9px;
+       height: 9px;
+       border-radius: 50%;
+       background: var(--warm-brown-soft);
+       box-shadow: 0 0 8px 1px var(--warm-brown-soft);
+       animation: signPulse 2s ease-in-out infinite;
+   }
+
+   @keyframes signPulse {
+       0%, 100% { opacity: 1; transform: scale(1); }
+       50% { opacity: 0.45; transform: scale(0.82); }
+   }
+
    .banner-overlay h2 {
        font-size: clamp(2.4rem, 6vw, 3.6rem);
        margin-bottom: 8px;
@@ -580,7 +615,9 @@
        background: var(--surface);
        border: 1px solid var(--line);
        border-radius: var(--radius);
-       overflow: hidden;
+       /* visible so the record can slide out of the sleeve on hover;
+          the sleeve and content keep their own corner rounding below */
+       overflow: visible;
        box-shadow: var(--shadow-sm);
        transition: transform var(--speed) var(--ease), box-shadow var(--speed), border-color var(--speed);
        position: relative;
@@ -592,6 +629,62 @@
        transform: translateY(-6px);
        box-shadow: var(--shadow);
        border-color: var(--line-strong);
+       z-index: 5; /* lift above neighbours so the peeking record shows */
+   }
+
+   /* The record disc, hidden behind the sleeve until hover */
+   .vinyl-disc {
+       position: absolute;
+       top: 0;
+       left: 0;
+       width: 100%;
+       aspect-ratio: 1;
+       z-index: 1;
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       pointer-events: none;
+       transform: translateX(0) rotate(0deg);
+       transition: transform 0.55s var(--ease);
+   }
+
+   .vinyl-disc::before {
+       content: '';
+       width: 88%;
+       aspect-ratio: 1;
+       border-radius: 50%;
+       background:
+           radial-gradient(circle at 50% 50%, var(--bg-0) 0 2.6%, transparent 2.9%),                /* spindle hole */
+           radial-gradient(circle at 50% 50%, var(--warm-brown-deep) 3% 17%, transparent 17.3%),    /* outer label ring */
+           radial-gradient(circle at 50% 50%, var(--warm-brown) 3% 28%, transparent 28.3%),         /* label */
+           repeating-radial-gradient(circle at 50% 50%, #08080a 0 1.4px, #1d1d20 1.4px 2.8px),       /* grooves */
+           #0c0c0e;
+       box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.85);
+       position: relative;
+       transition: box-shadow var(--speed);
+       animation: discSpin 3.2s linear infinite;
+       animation-play-state: paused;
+   }
+
+   /* Glossy highlight on the record */
+   .vinyl-disc::after {
+       content: '';
+       position: absolute;
+       width: 88%;
+       aspect-ratio: 1;
+       border-radius: 50%;
+       background: linear-gradient(125deg, rgba(255, 255, 255, 0.14) 0%, transparent 35%, transparent 65%, rgba(255, 255, 255, 0.08) 100%);
+       pointer-events: none;
+   }
+
+   .vinyl-card:hover .vinyl-disc { transform: translateX(36%) rotate(6deg); }
+   .vinyl-card:hover .vinyl-disc::before {
+       animation-play-state: running;
+       box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.85), 0 12px 26px rgba(0, 0, 0, 0.55);
+   }
+
+   @keyframes discSpin {
+       to { transform: rotate(360deg); }
    }
 
    .vinyl-cover {
@@ -600,7 +693,9 @@
        overflow: hidden;
        cursor: pointer;
        position: relative;
+       z-index: 2; /* sleeve sits in front of the record disc */
        background: var(--bg-1);
+       border-radius: var(--radius) var(--radius) 0 0;
    }
 
    .vinyl-cover img {
@@ -630,17 +725,34 @@
    }
    .vinyl-cover:hover::after { opacity: 1; }
 
-   /* Placeholder for missing album covers */
+   /* Placeholder for missing album covers — rendered as a vinyl record */
    .placeholder-cover {
        width: 100%;
        height: 100%;
        display: flex;
        align-items: center;
        justify-content: center;
-       background: radial-gradient(circle at center, var(--surface-3), var(--bg-1));
-       color: var(--cream-dim);
-       font-size: 2.6rem;
+       background:
+           radial-gradient(circle at 35% 30%, rgba(198, 139, 89, 0.10), transparent 60%),
+           linear-gradient(135deg, var(--surface-2), var(--bg-1));
+       position: relative;
    }
+   .placeholder-cover::before {
+       content: '';
+       width: 74%;
+       aspect-ratio: 1;
+       border-radius: 50%;
+       background:
+           radial-gradient(circle at 50% 50%, var(--bg-0) 0 3%, transparent 3.3%),
+           radial-gradient(circle at 50% 50%, var(--warm-brown-deep) 3% 18%, transparent 18.3%),
+           radial-gradient(circle at 50% 50%, var(--warm-brown) 3% 30%, transparent 30.3%),
+           repeating-radial-gradient(circle at 50% 50%, #08080a 0 1.4px, #1d1d20 1.4px 2.8px),
+           #0c0c0e;
+       box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.8), 0 8px 18px rgba(0, 0, 0, 0.4);
+   }
+   /* The Font Awesome glyph is redundant now that the CSS record shows */
+   .placeholder-cover i { display: none; }
+   .placeholder-cover.large::before { width: 60%; }
 
    .vinyl-info {
        padding: 14px 16px 6px;
@@ -1257,7 +1369,14 @@
        font-family: 'Space Mono', monospace;
    }
 
-   .no-results i { display: block; font-size: 2.6rem; margin-bottom: 14px; color: var(--surface-3); }
+   .no-results i {
+       display: block;
+       font-size: 3rem;
+       margin: 0 auto 16px;
+       width: fit-content;
+       color: var(--warm-brown-deep);
+       animation: discSpin 4.5s linear infinite;
+   }
 
    /* ---------- MEDIA QUERIES ---------- */
 

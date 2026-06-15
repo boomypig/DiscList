@@ -147,6 +147,7 @@
                 <!-- :src is the v-bind shorthand to bind an attribute to a data property -->
                 <img :src="storeImage" alt="Vintage Record Store">
                 <div class="banner-overlay">
+                    <span class="store-sign"><span class="sign-dot"></span> Now spinning</span>
                     <h2>DiscList</h2>
                     <p>Your digital vinyl collection</p>
                 </div>
@@ -218,7 +219,10 @@
 
                     <!-- v-for loops through filtered vinyl records -->
                     <div v-for="vinyl in displayedVinyls" :key="vinyl._id" class="vinyl-card" v-show="!isLoading">
-                        <!-- Record cover - clickable to view details -->
+                        <!-- The record itself, tucked behind the sleeve. On hover it
+                             slides out to the side and spins, like flipping through a crate. -->
+                        <div class="vinyl-disc" aria-hidden="true"></div>
+                        <!-- Record cover (the sleeve) - clickable to view details -->
                         <div class="vinyl-cover" @click="viewVinylDetails(vinyl)">
                             <!-- Conditional display of image or placeholder -->
                             <img v-if="vinyl.vinylCover" :src="vinyl.vinylCover" :alt="vinyl.album">
