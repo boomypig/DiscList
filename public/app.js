@@ -12,6 +12,16 @@ Vue.createApp({
             vinyls: [],          // Array to store all vinyl records from the database
             selectedVinyl: null, // Currently selected vinyl for details view
             searchQuery: '',     // Search input for filtering records
+            isLoading: true,     // True while the collection is being fetched (drives skeletons)
+
+            // Sorting
+            sortBy: 'newest',    // Current sort key
+            showSortMenu: false, // Whether the sort dropdown is open
+            sortOptions: {       // Available sort modes (key -> label)
+                newest: 'Newest',
+                albumAsc: 'Album A–Z',
+                artistAsc: 'Artist A–Z'
+            },
             
             // Store banner image URL
             storeImage: 'record-store-background.jpeg', // Path to record store image
@@ -86,18 +96,18 @@ Vue.createApp({
             );
         },
         
-        // Returns vinyls to be displayed based on active tab and filter
+        // Returns vinyls to be displayed based on active tab, filter, and sort
         displayedVinyls: function() {
-            if (this.activeTab === 'all') {
-                return this.filteredVinyls;
-            } else if (this.activeTab === 'collection') {
-                // Only show vinyls in user's collection
-                return this.filteredVinyls.filter(vinyl => this.isInCollection(vinyl));
+            let list = this.filteredVinyls;
+
+            if (this.activeTab === 'collection') {
+                list = list.filter(vinyl => this.isInCollection(vinyl));
             } else if (this.activeTab === 'wantlist') {
-                // Only show vinyls in user's want list
-                return this.filteredVinyls.filter(vinyl => this.isInWantList(vinyl));
+                list = list.filter(vinyl => this.isInWantList(vinyl));
             }
-            return [];
+
+            // Sort a copy so the underlying vinyls array order is preserved
+            return this.sortVinyls(list);
         }
     },
     
@@ -205,10 +215,56 @@ Vue.createApp({
             this.saveUserCollections();
         },
         
-        // Rates a vinyl (ratings feature is currently disabled)
+        // Rates a vinyl 1-5 (or 0 to clear). Ratings are stored per-user in
+        // local storage. Pass 0, or click the current rating again, to clear.
         rateVinyl: function(vinyl, rating) {
-            // This method is intentionally non-functional
-            console.log('Rating feature is disabled');
+            if (!this.user) {
+                this.showLoginForm();
+                return;
+            }
+
+            // Clicking the active star again toggles the rating off
+            if (rating === this.userRatings[vinyl._id]) {
+                rating = 0;
+            }
+
+            if (rating > 0) {
+                this.userRatings[vinyl._id] = rating;
+            } else {
+                delete this.userRatings[vinyl._id];
+            }
+
+            // Keep the open detail view and the source vinyl in sync
+            if (this.selectedVinyl && this.selectedVinyl._id === vinyl._id) {
+                this.selectedVinyl.userRating = rating || undefined;
+            }
+            const source = this.vinyls.find(v => v._id === vinyl._id);
+            if (source) source.userRating = rating || undefined;
+
+            this.saveUserCollections();
+        },
+
+        // ---------- SORTING ----------
+
+        // Sets the active sort mode and closes the menu
+        setSort: function(key) {
+            this.sortBy = key;
+            this.showSortMenu = false;
+        },
+
+        // Returns a sorted copy of a vinyl list based on the current sort mode
+        sortVinyls: function(list) {
+            const sorted = [...list];
+            if (this.sortBy === 'albumAsc') {
+                sorted.sort((a, b) => (a.album || '').localeCompare(b.album || ''));
+            } else if (this.sortBy === 'artistAsc') {
+                sorted.sort((a, b) => (a.artist || '').localeCompare(b.artist || ''));
+            } else {
+                // Newest first - MongoDB ObjectIds are time-ordered, so a
+                // descending id sort approximates most-recently-added.
+                sorted.sort((a, b) => String(b._id).localeCompare(String(a._id)));
+            }
+            return sorted;
         },
         
         // Checks if a vinyl is in the user's collection
@@ -651,22 +707,26 @@ Vue.createApp({
         
         // Loads vinyl records from the API
         loadVinyls: function() {
+            this.isLoading = true;
             fetch(`${API_URL}/vinyls`, {
                 credentials: 'include'
-            }).then(response => {
-                response.json().then((vinyls) => {
-                    console.log("Loaded vinyls:", vinyls);
-                    this.vinyls = vinyls;
-                    
-                    // Apply user ratings if logged in
-                    if (this.user) {
-                        this.applyRatingsToVinyls();
-                    }
-                });
+            })
+            .then(response => response.json())
+            .then((vinyls) => {
+                console.log("Loaded vinyls:", vinyls);
+                this.vinyls = vinyls;
+
+                // Apply user ratings if logged in
+                if (this.user) {
+                    this.applyRatingsToVinyls();
+                }
             })
             .catch(error => {
                 console.error("Error loading vinyls:", error);
                 this.showError('Failed to load vinyl collection');
+            })
+            .finally(() => {
+                this.isLoading = false;
             });
         },
         
@@ -848,6 +908,11 @@ Vue.createApp({
                 !event.target.closest('#menuButton')) {
                 this.showMenu = false;
             }
+
+            // Close the sort dropdown when clicking outside of it
+            if (this.showSortMenu && !event.target.closest('.filter-wrap')) {
+                this.showSortMenu = false;
+            }
         });
 
         // Escape key backs out of the topmost layer without a refresh:
@@ -855,7 +920,9 @@ Vue.createApp({
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape') return;
 
-            if (this.selectedVinyl) {
+            if (this.showSortMenu) {
+                this.showSortMenu = false;
+            } else if (this.selectedVinyl) {
                 this.selectedVinyl = null;
             } else if (this.showDeleteConfirm) {
                 this.showDeleteConfirm = false;

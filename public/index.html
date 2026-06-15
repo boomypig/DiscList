@@ -155,27 +155,44 @@
             <!-- View Tabs - navigation between different views -->
             <div class="view-tabs">
                 <div class="tab-container">
-                    <!-- Tab buttons - :class assigns the 'active' class 
-                         when the current tab matches -->
-                    <button class="tab-button" 
+                    <!-- Tab buttons - :class assigns the 'active' class
+                         when the current tab matches. Each shows a live count. -->
+                    <button class="tab-button"
                             :class="{ active: activeTab === 'all' }"
                             @click="setActiveTab('all')">
-                        All Records
+                        All Records <span class="tab-count">{{ vinyls.length }}</span>
                     </button>
-                    <button class="tab-button" 
+                    <button class="tab-button"
                             :class="{ active: activeTab === 'collection' }"
                             @click="setActiveTab('collection')">
-                        My Collection
+                        My Collection <span v-if="user" class="tab-count">{{ userCollection.length }}</span>
                     </button>
-                    <button class="tab-button" 
+                    <button class="tab-button"
                             :class="{ active: activeTab === 'wantlist' }"
                             @click="setActiveTab('wantlist')">
-                        Want List
+                        Want List <span v-if="user" class="tab-count">{{ userWantList.length }}</span>
                     </button>
                 </div>
-                <button class="filter-button">
-                    <i class="fas fa-filter"></i>
-                </button>
+
+                <!-- Sort control - replaces the old non-functional filter button.
+                     Clicking opens a small menu of sort options. -->
+                <div class="filter-wrap">
+                    <button class="filter-button" :class="{ active: showSortMenu }" @click.stop="showSortMenu = !showSortMenu">
+                        <i class="fas fa-arrow-down-wide-short"></i>
+                        <span class="filter-label">{{ sortOptions[sortBy] }}</span>
+                    </button>
+                    <transition name="modal">
+                        <div class="sort-menu" v-if="showSortMenu" @click.stop>
+                            <button v-for="(label, key) in sortOptions" :key="key"
+                                    class="sort-option"
+                                    :class="{ selected: sortBy === key }"
+                                    @click="setSort(key)">
+                                {{ label }}
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </transition>
+                </div>
             </div>
             
             <!-- Login Required Notice - shown when trying to access restricted tabs -->
@@ -190,8 +207,17 @@
                 
                 <!-- Vinyl Grid - displays records in a responsive grid layout -->
                 <div class="vinyl-grid">
+                    <!-- Skeleton placeholders while the collection is loading -->
+                    <template v-if="isLoading">
+                        <div v-for="n in 10" :key="'sk' + n" class="vinyl-card skeleton">
+                            <div class="skeleton-block skeleton-cover"></div>
+                            <div class="skeleton-block skeleton-line"></div>
+                            <div class="skeleton-block skeleton-line short"></div>
+                        </div>
+                    </template>
+
                     <!-- v-for loops through filtered vinyl records -->
-                    <div v-for="vinyl in displayedVinyls" :key="vinyl._id" class="vinyl-card">
+                    <div v-for="vinyl in displayedVinyls" :key="vinyl._id" class="vinyl-card" v-show="!isLoading">
                         <!-- Record cover - clickable to view details -->
                         <div class="vinyl-cover" @click="viewVinylDetails(vinyl)">
                             <!-- Conditional display of image or placeholder -->
@@ -206,13 +232,12 @@
                             <p class="vinyl-artist">{{ vinyl.artist }}</p>
                             
                             <!-- Rating display - only shown in collection tab and if rated -->
-                            <div v-if="activeTab === 'collection' && vinyl.userRating" class="vinyl-rating">
-                                <p class="rating-label">Rating:</p>
-                                <!-- Star rating system using Font Awesome -->
+                            <div v-if="activeTab === 'collection' && userRatings[vinyl._id]" class="vinyl-rating">
+                                <!-- Star rating system using Font Awesome (FA6 uses far/fas for empty/full) -->
                                 <div class="stars">
                                     <!-- Loop to create 5 stars, filled based on rating -->
                                     <i v-for="n in 5" :key="n"
-                                       :class="['fas', n <= vinyl.userRating ? 'fa-star' : 'fa-star-o']"></i>
+                                       :class="[n <= userRatings[vinyl._id] ? 'fas' : 'far', 'fa-star']"></i>
                                 </div>
                             </div>
                         </div>
@@ -227,7 +252,7 @@
                             <!-- Want list toggle button - only for logged in users -->
                             <button class="action-button" v-if="user" @click="toggleWantList(vinyl)"
                                     :title="isInWantList(vinyl) ? 'Remove from want list' : 'Add to want list'">
-                                <i :class="['fas', isInWantList(vinyl) ? 'fa-heart' : 'fa-heart-o']"></i>
+                                <i :class="[isInWantList(vinyl) ? 'fas' : 'far', 'fa-heart']"></i>
                             </button>
                             <!-- Options button for all users -->
                             <button class="action-button" @click="showVinylOptions(vinyl)">
@@ -246,9 +271,13 @@
                 </div>
 
                 <!-- No results message -->
-                <p v-if="displayedVinyls.length === 0" class="no-results">
-                    No records found.
-                </p>
+                <div v-if="!isLoading && displayedVinyls.length === 0" class="no-results">
+                    <i class="fas fa-record-vinyl"></i>
+                    <span v-if="searchQuery">No records match "{{ searchQuery }}".</span>
+                    <span v-else-if="activeTab === 'collection'">Your collection is empty — add records from All Records.</span>
+                    <span v-else-if="activeTab === 'wantlist'">Your want list is empty — heart records you're hunting for.</span>
+                    <span v-else>No records yet.</span>
+                </div>
             </div>
             
             <!-- Admin Panel - form for adding/editing vinyl records -->
@@ -314,6 +343,11 @@
                 </form>
             </div>
             
+            <!-- Dimmed backdrop behind the side menu -->
+            <transition name="modal">
+                <div class="menu-backdrop" v-if="showMenu" @click="showMenu = false"></div>
+            </transition>
+
             <!-- Side Menu - slides in from right when active -->
             <div class="side-menu" :class="{ 'show': showMenu }">
                 <div class="menu-header">
@@ -337,9 +371,13 @@
                         <i class="fas fa-heart"></i> Want List
                     </a>
                     <!-- Admin controls menu item - only for admins -->
-                    <a href="#" v-if="isAdmin" @click.prevent="toggleAdminPanel" class="menu-item">
-                        <i class="fas fa-shield-alt"></i> Admin Controls
-                    </a>
+                    <template v-if="isAdmin">
+                        <div class="menu-divider"></div>
+                        <a href="#" @click.prevent="toggleAdminPanel" class="menu-item">
+                            <i class="fas fa-shield-alt"></i> Admin Controls
+                        </a>
+                    </template>
+                    <div class="menu-divider"></div>
                     <!-- Login/Logout based on user status -->
                     <a href="#" v-if="!user" @click.prevent="showLoginForm" class="menu-item">
                         <i class="fas fa-sign-in-alt"></i> Login
@@ -397,17 +435,23 @@
                             </button>
                             
                             <button class="action-button large" @click="toggleWantList(selectedVinyl)">
-                                <i :class="['fas', isInWantList(selectedVinyl) ? 'fa-heart' : 'fa-heart-o']"></i>
+                                <i :class="[isInWantList(selectedVinyl) ? 'fas' : 'far', 'fa-heart']"></i>
                                 {{ isInWantList(selectedVinyl) ? 'In Want List' : 'Add to Want List' }}
                             </button>
                         </div>
                         
-                        <!-- Disabled rating system for collection items -->
+                        <!-- Interactive rating system for items in the collection.
+                             Ratings are stored per-user in local storage. -->
                         <div v-if="user && isInCollection(selectedVinyl)" class="rating-container">
-                            <p class="rating-label">Rating feature temporarily unavailable</p>
-                            <div class="rating-stars disabled">
-                                <i v-for="n in 5" :key="n" class="fas"
-                                   :class="n <= (selectedVinyl.userRating || 0) ? 'fa-star' : 'fa-star-o'"></i>
+                            <p class="rating-label">
+                                Your rating
+                                <button v-if="userRatings[selectedVinyl._id]" class="rating-clear"
+                                        @click="rateVinyl(selectedVinyl, 0)">Clear</button>
+                            </p>
+                            <div class="rating-stars">
+                                <i v-for="n in 5" :key="n" class="fas fa-star"
+                                   :class="{ filled: n <= (userRatings[selectedVinyl._id] || 0) }"
+                                   @click="rateVinyl(selectedVinyl, n)"></i>
                             </div>
                         </div>
                         

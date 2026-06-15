@@ -17,8 +17,10 @@ https://www.figma.com/design/paPig7Atemq2SUMG7gYDiI/DiscList?node-id=0-1&t=WbnsS
 - **Account Management**: Sign up and log in securely
 - **Record Browsing**: View all vinyl records in the database
 - **Search Functionality**: Find records by album, artist, or version
+- **Sorting**: Order records by newest, album, or artist
 - **Personal Collection**: Add records to your collection
 - **Want List**: Keep track of records you want to acquire
+- **Star Ratings**: Rate records in your collection (1–5 stars)
 
 ### Admin Features
 - **Record Management**: Add, edit, and delete vinyl records
@@ -78,4 +80,4 @@ https://www.figma.com/design/paPig7Atemq2SUMG7gYDiI/DiscList?node-id=0-1&t=WbnsS
 The application uses the browser's local storage to maintain:
 - User's collection of vinyl records
 - User's want list
-- User's ratings of records (couldn't get to work)
+- User's ratings of records (1–5 stars, set from a record's detail view)
