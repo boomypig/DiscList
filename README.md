@@ -67,8 +67,7 @@ https://www.figma.com/design/paPig7Atemq2SUMG7gYDiI/DiscList?node-id=0-1&t=WbnsS
 - `GET /session`: Check current session
 - `DELETE /session`: Log out user
 
-### File Upload
-- `POST /upload-image`: Upload an album cover image (admin only)
+
 
 ## Security Features
 - **Password Encryption**: User passwords are hashed with bcrypt
