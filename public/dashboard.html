@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VinylVault — Dashboard</title>
+
+    <!-- Fonts from the design system: Space Grotesk (headline), Manrope (body), JetBrains Mono (label) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="dashboard" class="app-shell">
+
+        <!-- ===================== SIDEBAR ===================== -->
+        <aside class="sidebar">
+            <h1 class="brand">VinylVault</h1>
+
+            <!-- Who's logged in + how many records the catalog holds -->
+            <div class="user-card">
+                <div class="user-avatar">
+                    <i class="fas fa-record-vinyl"></i>
+                </div>
+                <div class="user-meta">
+                    <span class="user-name">{{ displayName }}</span>
+                    <span class="user-count">{{ totalRecords }} Records</span>
+                </div>
+            </div>
+
+            <!-- Primary navigation. Only Dashboard is wired up for now; the
+                 other destinations are placeholders for the pages we build next. -->
+            <nav class="nav">
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-table-cells-large"></i> Dashboard
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="far fa-circle-dot"></i> My Collection
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="far fa-heart"></i> Wantlist
+                </a>
+            </nav>
+
+            <div class="sidebar-spacer"></div>
+
+            <button class="add-vinyl-btn">
+                <i class="fas fa-plus"></i> Add New Vinyl
+            </button>
+
+            <div class="sidebar-footer">
+                <a href="#" class="footer-link"><i class="fas fa-gear"></i> Settings</a>
+                <a href="#" class="footer-link"><i class="fas fa-circle-question"></i> Support</a>
+            </div>
+        </aside>
+
+        <!-- ===================== MAIN ===================== -->
+        <main class="main">
+
+            <!-- ---- Top row: Now Spinning + stat cards ---- -->
+            <section class="top-row">
+
+                <!-- Now Spinning: the most recently added record, presented like a
+                     turntable that's currently playing. -->
+                <div class="now-spinning card" v-if="featured">
+                    <div class="spinning-art">
+                        <img v-if="featured.vinylCover" :src="featured.vinylCover" :alt="featured.album">
+                        <div v-else class="art-placeholder"><i class="fas fa-record-vinyl"></i></div>
+                    </div>
+
+                    <div class="spinning-disc" aria-hidden="true"></div>
+
+                    <div class="spinning-info">
+                        <div class="tag-row">
+                            <span v-if="featured.vinylVersion" class="tag">{{ featured.vinylVersion }}</span>
+                            <span class="tag">LP</span>
+                        </div>
+                        <h2 class="spinning-title">{{ featured.album }}</h2>
+                        <p class="spinning-artist">{{ featured.artist }}</p>
+
+                        <div class="player">
+                            <div class="progress"><span class="progress-fill"></span></div>
+                            <div class="player-controls">
+                                <button class="ctrl"><i class="fas fa-backward-step"></i></button>
+                                <button class="ctrl play"><i class="fas fa-play"></i></button>
+                                <button class="ctrl"><i class="fas fa-forward-step"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty state for Now Spinning when the catalog is empty -->
+                <div class="now-spinning card empty" v-else>
+                    <i class="fas fa-record-vinyl"></i>
+                    <p>No records yet — add your first vinyl to get spinning.</p>
+                </div>
+
+                <!-- Stat cards: real counts derived straight from the catalog -->
+                <div class="stats-col">
+                    <div class="stat-card card">
+                        <span class="stat-label">Total Collection</span>
+                        <span class="stat-value">{{ totalRecords }}</span>
+                        <span class="stat-sub">Records in the vault</span>
+                    </div>
+                    <div class="stat-card card">
+                        <span class="stat-label">Unique Artists</span>
+                        <span class="stat-value">{{ artistCount }}</span>
+                        <span class="stat-sub">Across your collection</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ---- Recently Added ---- -->
+            <section class="section">
+                <div class="section-head">
+                    <h3 class="section-title">Recently Added</h3>
+                    <a href="#" class="section-link">View Collection <i class="fas fa-arrow-right"></i></a>
+                </div>
+
+                <div class="recent-grid">
+                    <article v-for="vinyl in recentlyAdded" :key="vinyl._id" class="recent-card">
+                        <div class="recent-cover">
+                            <img v-if="vinyl.vinylCover" :src="vinyl.vinylCover" :alt="vinyl.album">
+                            <div v-else class="art-placeholder"><i class="fas fa-record-vinyl"></i></div>
+                        </div>
+                        <p class="recent-album">{{ vinyl.album }}</p>
+                        <p class="recent-artist">{{ vinyl.artist }}</p>
+                        <span v-if="vinyl.vinylVersion" class="tag small">{{ vinyl.vinylVersion }}</span>
+                    </article>
+
+                    <!-- Skeletons while the catalog loads -->
+                    <template v-if="isLoading">
+                        <article v-for="n in 5" :key="'sk'+n" class="recent-card skeleton">
+                            <div class="recent-cover skeleton-block"></div>
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line short"></div>
+                        </article>
+                    </template>
+
+                    <div v-if="!isLoading && recentlyAdded.length === 0" class="recent-empty">
+                        Nothing here yet.
+                    </div>
+                </div>
+            </section>
+
+            <!-- ---- Recent Activity ---- -->
+            <!-- Honest feed: these are the records most recently added to the
+                 catalog, newest first. No fabricated events or timestamps. -->
+            <section class="section">
+                <h3 class="section-title">Recent Activity</h3>
+
+                <div class="activity-list">
+                    <div v-for="vinyl in activity" :key="vinyl._id" class="activity-row">
+                        <div class="activity-icon"><i class="fas fa-plus"></i></div>
+                        <div class="activity-text">
+                            <span class="activity-main">Added <strong>{{ vinyl.album }}</strong> to the catalog</span>
+                            <span class="activity-sub">{{ vinyl.artist }}</span>
+                        </div>
+                        <span v-if="vinyl.vinylVersion" class="tag small">{{ vinyl.vinylVersion }}</span>
+                    </div>
+
+                    <div v-if="!isLoading && activity.length === 0" class="activity-empty">
+                        No activity yet.
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
