@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VinylVault — Dashboard</title>
+    <title>DiscList — Dashboard</title>
 
     <!-- Fonts from the design system: Space Grotesk (headline), Manrope (body), JetBrains Mono (label) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,160 +14,378 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
-    <div id="dashboard" class="app-shell">
+    <div id="dashboard">
 
-        <!-- ===================== SIDEBAR ===================== -->
-        <aside class="sidebar">
-            <h1 class="brand">VinylVault</h1>
+        <!-- ===================== AUTH: LOGIN ===================== -->
+        <div v-if="currentView === 'login'" class="auth-page">
+            <div class="auth-box">
+                <button type="button" class="auth-back" @click="backToBrowsing"><i class="fas fa-arrow-left"></i> Back</button>
+                <h1 class="brand auth-brand">DiscList</h1>
+                <p class="auth-tagline">Find, collect and share your favorite vinyl records</p>
 
-            <!-- Who's logged in + how many records the catalog holds -->
-            <div class="user-card">
-                <div class="user-avatar">
-                    <i class="fas fa-record-vinyl"></i>
-                </div>
-                <div class="user-meta">
-                    <span class="user-name">{{ displayName }}</span>
-                    <span class="user-count">{{ totalRecords }} Records</span>
-                </div>
-            </div>
-
-            <!-- Primary navigation. Only Dashboard is wired up for now; the
-                 other destinations are placeholders for the pages we build next. -->
-            <nav class="nav">
-                <a href="#" class="nav-item active">
-                    <i class="fas fa-table-cells-large"></i> Dashboard
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="far fa-circle-dot"></i> My Collection
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="far fa-heart"></i> Wantlist
-                </a>
-            </nav>
-
-            <div class="sidebar-spacer"></div>
-
-            <button class="add-vinyl-btn">
-                <i class="fas fa-plus"></i> Add New Vinyl
-            </button>
-
-            <div class="sidebar-footer">
-                <a href="#" class="footer-link"><i class="fas fa-gear"></i> Settings</a>
-                <a href="#" class="footer-link"><i class="fas fa-circle-question"></i> Support</a>
-            </div>
-        </aside>
-
-        <!-- ===================== MAIN ===================== -->
-        <main class="main">
-
-            <!-- ---- Top row: Now Spinning + stat cards ---- -->
-            <section class="top-row">
-
-                <!-- Now Spinning: the most recently added record, presented like a
-                     turntable that's currently playing. -->
-                <div class="now-spinning card" v-if="featured">
-                    <div class="spinning-art">
-                        <img v-if="featured.vinylCover" :src="featured.vinylCover" :alt="featured.album">
-                        <div v-else class="art-placeholder"><i class="fas fa-record-vinyl"></i></div>
+                <form @submit.prevent="login" class="auth-form">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" v-model="loginData.email" required>
                     </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" v-model="loginData.password" required>
+                    </div>
+                    <div v-if="loginError" class="error-message">{{ loginError }}</div>
+                    <button type="submit" class="auth-button" :disabled="isLoggingIn">
+                        <span v-if="isLoggingIn"><i class="fas fa-circle-notch fa-spin"></i> Logging in...</span>
+                        <span v-else>Log in</span>
+                    </button>
+                </form>
+                <p class="auth-redirect">Don't have an account?
+                    <a href="#" @click.prevent="currentView = 'signup'" class="auth-link">Sign up</a>
+                </p>
+            </div>
+        </div>
 
-                    <div class="spinning-disc" aria-hidden="true"></div>
+        <!-- ===================== AUTH: SIGNUP ===================== -->
+        <div v-if="currentView === 'signup'" class="auth-page">
+            <div class="auth-box">
+                <button type="button" class="auth-back" @click="backToBrowsing"><i class="fas fa-arrow-left"></i> Back</button>
+                <h1 class="brand auth-brand">DiscList</h1>
+                <p class="auth-tagline">Join the vinyl revolution</p>
 
-                    <div class="spinning-info">
-                        <div class="tag-row">
-                            <span v-if="featured.vinylVersion" class="tag">{{ featured.vinylVersion }}</span>
-                            <span class="tag">LP</span>
+                <form @submit.prevent="signup" class="auth-form">
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <input type="text" id="firstName" v-model="signupData.firstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" id="lastName" v-model="signupData.lastName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userName">Username</label>
+                        <input type="text" id="userName" v-model="signupData.userName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupEmail">Email</label>
+                        <input type="email" id="signupEmail" v-model="signupData.email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <input type="password" id="signupPassword" v-model="signupData.password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" v-model="signupData.confirmPassword" required>
+                    </div>
+                    <div v-if="signupError" class="error-message">{{ signupError }}</div>
+                    <button type="submit" class="auth-button" :disabled="isSigningUp">
+                        <span v-if="isSigningUp"><i class="fas fa-circle-notch fa-spin"></i> Creating...</span>
+                        <span v-else>Create Account</span>
+                    </button>
+                </form>
+                <p class="auth-redirect">Already have an account?
+                    <a href="#" @click.prevent="currentView = 'login'" class="auth-link">Log in</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- ===================== MAIN APP SHELL ===================== -->
+        <div v-if="currentView === 'main'" class="app-shell">
+
+            <!-- SIDEBAR -->
+            <aside class="sidebar">
+                <h1 class="brand">DiscList</h1>
+
+                <div class="user-card">
+                    <div class="user-avatar"><i class="fas fa-record-vinyl"></i></div>
+                    <div class="user-meta">
+                        <span class="user-name">{{ displayName }}</span>
+                        <span class="user-count">{{ totalRecords }} Records</span>
+                    </div>
+                </div>
+
+                <nav class="nav">
+                    <a href="#" class="nav-item active">
+                        <i class="fas fa-table-cells-large"></i> Dashboard
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="far fa-circle-dot"></i> My Collection
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="far fa-heart"></i> Wantlist
+                    </a>
+                </nav>
+
+                <div class="sidebar-spacer"></div>
+
+                <button class="add-vinyl-btn" @click="handleAddVinyl">
+                    <i class="fas fa-plus"></i> Add New Vinyl
+                </button>
+
+                <div class="sidebar-footer">
+                    <a href="#" v-if="!user" class="footer-link" @click.prevent="showLoginForm"><i class="fas fa-right-to-bracket"></i> Login</a>
+                    <a href="#" v-if="user" class="footer-link" @click.prevent="logout"><i class="fas fa-right-from-bracket"></i> Logout</a>
+                    <a href="#" class="footer-link"><i class="fas fa-gear"></i> Settings</a>
+                    <a href="#" class="footer-link"><i class="fas fa-circle-question"></i> Support</a>
+                </div>
+            </aside>
+
+            <!-- MAIN -->
+            <main class="main">
+
+                <!-- Top row -->
+                <section class="top-row">
+                    <div class="now-spinning card" v-if="featured">
+                        <div class="spinning-art" @click="viewVinylDetails(featured)">
+                            <img v-if="featured.vinylCover" :src="featured.vinylCover" :alt="featured.album">
+                            <div v-else class="art-placeholder"><i class="fas fa-record-vinyl"></i></div>
                         </div>
-                        <h2 class="spinning-title">{{ featured.album }}</h2>
-                        <p class="spinning-artist">{{ featured.artist }}</p>
 
-                        <div class="player">
-                            <div class="progress"><span class="progress-fill"></span></div>
-                            <div class="player-controls">
-                                <button class="ctrl"><i class="fas fa-backward-step"></i></button>
-                                <button class="ctrl play"><i class="fas fa-play"></i></button>
-                                <button class="ctrl"><i class="fas fa-forward-step"></i></button>
+                        <div class="spinning-disc" aria-hidden="true"></div>
+
+                        <div class="spinning-info">
+                            <div class="tag-row">
+                                <span v-if="featured.vinylVersion" class="tag">{{ featured.vinylVersion }}</span>
+                                <span class="tag">LP</span>
+                            </div>
+                            <h2 class="spinning-title">{{ featured.album }}</h2>
+                            <p class="spinning-artist">{{ featured.artist }}</p>
+
+                            <div class="player">
+                                <div class="progress"><span class="progress-fill"></span></div>
+                                <div class="player-controls">
+                                    <button class="ctrl"><i class="fas fa-backward-step"></i></button>
+                                    <button class="ctrl play"><i class="fas fa-play"></i></button>
+                                    <button class="ctrl"><i class="fas fa-forward-step"></i></button>
+
+                                    <!-- Working collection / wantlist toggles -->
+                                    <span class="ctrl-divider"></span>
+                                    <button class="ctrl" :class="{ active: isInCollection(featured) }"
+                                            @click="toggleCollection(featured)"
+                                            :title="isInCollection(featured) ? 'In collection' : 'Add to collection'">
+                                        <i :class="['fas', isInCollection(featured) ? 'fa-check-circle' : 'fa-plus-circle']"></i>
+                                    </button>
+                                    <button class="ctrl" :class="{ active: isInWantList(featured) }"
+                                            @click="toggleWantList(featured)"
+                                            :title="isInWantList(featured) ? 'In wantlist' : 'Add to wantlist'">
+                                        <i :class="[isInWantList(featured) ? 'fas' : 'far', 'fa-heart']"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Empty state for Now Spinning when the catalog is empty -->
-                <div class="now-spinning card empty" v-else>
-                    <i class="fas fa-record-vinyl"></i>
-                    <p>No records yet — add your first vinyl to get spinning.</p>
-                </div>
-
-                <!-- Stat cards: real counts derived straight from the catalog -->
-                <div class="stats-col">
-                    <div class="stat-card card">
-                        <span class="stat-label">Total Collection</span>
-                        <span class="stat-value">{{ totalRecords }}</span>
-                        <span class="stat-sub">Records in the vault</span>
+                    <div class="now-spinning card empty" v-else>
+                        <i class="fas fa-record-vinyl"></i>
+                        <p>No records yet — add your first vinyl to get spinning.</p>
                     </div>
-                    <div class="stat-card card">
-                        <span class="stat-label">Unique Artists</span>
-                        <span class="stat-value">{{ artistCount }}</span>
-                        <span class="stat-sub">Across your collection</span>
-                    </div>
-                </div>
-            </section>
 
-            <!-- ---- Recently Added ---- -->
-            <section class="section">
-                <div class="section-head">
-                    <h3 class="section-title">Recently Added</h3>
-                    <a href="#" class="section-link">View Collection <i class="fas fa-arrow-right"></i></a>
-                </div>
-
-                <div class="recent-grid">
-                    <article v-for="vinyl in recentlyAdded" :key="vinyl._id" class="recent-card">
-                        <div class="recent-cover">
-                            <img v-if="vinyl.vinylCover" :src="vinyl.vinylCover" :alt="vinyl.album">
-                            <div v-else class="art-placeholder"><i class="fas fa-record-vinyl"></i></div>
+                    <div class="stats-col">
+                        <div class="stat-card card">
+                            <span class="stat-label">Total Collection</span>
+                            <span class="stat-value">{{ totalRecords }}</span>
+                            <span class="stat-sub">Records in the vault</span>
                         </div>
-                        <p class="recent-album">{{ vinyl.album }}</p>
-                        <p class="recent-artist">{{ vinyl.artist }}</p>
-                        <span v-if="vinyl.vinylVersion" class="tag small">{{ vinyl.vinylVersion }}</span>
-                    </article>
+                        <div class="stat-card card">
+                            <span class="stat-label">Unique Artists</span>
+                            <span class="stat-value">{{ artistCount }}</span>
+                            <span class="stat-sub">Across your collection</span>
+                        </div>
+                    </div>
+                </section>
 
-                    <!-- Skeletons while the catalog loads -->
-                    <template v-if="isLoading">
-                        <article v-for="n in 5" :key="'sk'+n" class="recent-card skeleton">
-                            <div class="recent-cover skeleton-block"></div>
-                            <div class="skeleton-line"></div>
-                            <div class="skeleton-line short"></div>
+                <!-- Recently Added -->
+                <section class="section">
+                    <div class="section-head">
+                        <h3 class="section-title">Recently Added</h3>
+                        <a href="#" class="section-link">View Collection <i class="fas fa-arrow-right"></i></a>
+                    </div>
+
+                    <div class="recent-grid">
+                        <article v-for="vinyl in recentlyAdded" :key="vinyl._id" class="recent-card">
+                            <div class="recent-cover" @click="viewVinylDetails(vinyl)">
+                                <img v-if="vinyl.vinylCover" :src="vinyl.vinylCover" :alt="vinyl.album">
+                                <div v-else class="art-placeholder"><i class="fas fa-record-vinyl"></i></div>
+
+                                <!-- Hover actions — these actually add to the user's lists -->
+                                <div class="cover-actions">
+                                    <button class="cover-btn" :class="{ active: isInCollection(vinyl) }"
+                                            @click.stop="toggleCollection(vinyl)"
+                                            :title="isInCollection(vinyl) ? 'In collection' : 'Add to collection'">
+                                        <i :class="['fas', isInCollection(vinyl) ? 'fa-check' : 'fa-plus']"></i>
+                                    </button>
+                                    <button class="cover-btn" :class="{ active: isInWantList(vinyl) }"
+                                            @click.stop="toggleWantList(vinyl)"
+                                            :title="isInWantList(vinyl) ? 'In wantlist' : 'Add to wantlist'">
+                                        <i :class="[isInWantList(vinyl) ? 'fas' : 'far', 'fa-heart']"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="recent-album">{{ vinyl.album }}</p>
+                            <p class="recent-artist">{{ vinyl.artist }}</p>
+                            <span v-if="vinyl.vinylVersion" class="tag small">{{ vinyl.vinylVersion }}</span>
                         </article>
-                    </template>
 
-                    <div v-if="!isLoading && recentlyAdded.length === 0" class="recent-empty">
-                        Nothing here yet.
-                    </div>
-                </div>
-            </section>
+                        <template v-if="isLoading">
+                            <article v-for="n in 5" :key="'sk'+n" class="recent-card skeleton">
+                                <div class="recent-cover skeleton-block"></div>
+                                <div class="skeleton-line"></div>
+                                <div class="skeleton-line short"></div>
+                            </article>
+                        </template>
 
-            <!-- ---- Recent Activity ---- -->
-            <!-- Honest feed: these are the records most recently added to the
-                 catalog, newest first. No fabricated events or timestamps. -->
-            <section class="section">
-                <h3 class="section-title">Recent Activity</h3>
-
-                <div class="activity-list">
-                    <div v-for="vinyl in activity" :key="vinyl._id" class="activity-row">
-                        <div class="activity-icon"><i class="fas fa-plus"></i></div>
-                        <div class="activity-text">
-                            <span class="activity-main">Added <strong>{{ vinyl.album }}</strong> to the catalog</span>
-                            <span class="activity-sub">{{ vinyl.artist }}</span>
+                        <div v-if="!isLoading && recentlyAdded.length === 0" class="recent-empty">
+                            Nothing here yet.
                         </div>
-                        <span v-if="vinyl.vinylVersion" class="tag small">{{ vinyl.vinylVersion }}</span>
                     </div>
+                </section>
 
-                    <div v-if="!isLoading && activity.length === 0" class="activity-empty">
-                        No activity yet.
+                <!-- Recent Activity -->
+                <section class="section">
+                    <h3 class="section-title">Recent Activity</h3>
+                    <div class="activity-list">
+                        <div v-for="vinyl in activity" :key="vinyl._id" class="activity-row" @click="viewVinylDetails(vinyl)">
+                            <div class="activity-icon"><i class="fas fa-plus"></i></div>
+                            <div class="activity-text">
+                                <span class="activity-main">Added <strong>{{ vinyl.album }}</strong> to the catalog</span>
+                                <span class="activity-sub">{{ vinyl.artist }}</span>
+                            </div>
+                            <span v-if="vinyl.vinylVersion" class="tag small">{{ vinyl.vinylVersion }}</span>
+                        </div>
+                        <div v-if="!isLoading && activity.length === 0" class="activity-empty">No activity yet.</div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- ===================== DETAIL MODAL ===================== -->
+        <transition name="modal">
+        <div class="modal" v-if="selectedVinyl" @click.self="selectedVinyl = null">
+            <div class="modal-content">
+                <button class="close-modal" @click="selectedVinyl = null"><i class="fas fa-times"></i></button>
+                <div class="detail-view">
+                    <div class="detail-cover">
+                        <img v-if="selectedVinyl.vinylCover" :src="selectedVinyl.vinylCover" :alt="selectedVinyl.album">
+                        <div v-else class="art-placeholder"><i class="fas fa-record-vinyl"></i></div>
+                    </div>
+                    <div class="detail-info">
+                        <h2>{{ selectedVinyl.album }}</h2>
+                        <p class="detail-artist">{{ selectedVinyl.artist }}</p>
+
+                        <div class="tag-row" v-if="selectedVinyl.vinylVersion">
+                            <span class="tag">{{ selectedVinyl.vinylVersion }}</span>
+                        </div>
+
+                        <div v-if="selectedVinyl.songs" class="detail-row"><span class="detail-label">Songs</span><span>{{ selectedVinyl.songs }}</span></div>
+                        <div v-if="selectedVinyl.upc" class="detail-row"><span class="detail-label">UPC</span><span>{{ selectedVinyl.upc }}</span></div>
+
+                        <div class="detail-actions">
+                            <button class="detail-btn" :class="{ active: isInCollection(selectedVinyl) }" @click="toggleCollection(selectedVinyl)">
+                                <i :class="['fas', isInCollection(selectedVinyl) ? 'fa-check-circle' : 'fa-plus-circle']"></i>
+                                {{ isInCollection(selectedVinyl) ? 'In Collection' : 'Add to Collection' }}
+                            </button>
+                            <button class="detail-btn" :class="{ active: isInWantList(selectedVinyl) }" @click="toggleWantList(selectedVinyl)">
+                                <i :class="[isInWantList(selectedVinyl) ? 'fas' : 'far', 'fa-heart']"></i>
+                                {{ isInWantList(selectedVinyl) ? 'In Wantlist' : 'Add to Wantlist' }}
+                            </button>
+                        </div>
+
+                        <!-- Rating (only for items in the collection) -->
+                        <div v-if="user && isInCollection(selectedVinyl)" class="rating-container">
+                            <p class="rating-label">Your rating</p>
+                            <div class="rating-stars">
+                                <i v-for="n in 5" :key="n" class="fas fa-star"
+                                   :class="{ filled: n <= (userRatings[selectedVinyl._id] || 0) }"
+                                   @click="rateVinyl(selectedVinyl, n)"></i>
+                            </div>
+                        </div>
+
+                        <!-- Admin controls -->
+                        <div v-if="isAdmin" class="admin-detail-actions">
+                            <button class="admin-btn edit" @click="editVinyl(selectedVinyl)"><i class="fas fa-edit"></i> Edit</button>
+                            <button class="admin-btn delete" @click="confirmDeleteVinyl(selectedVinyl)"><i class="fas fa-trash"></i> Delete</button>
+                        </div>
                     </div>
                 </div>
-            </section>
-        </main>
+            </div>
+        </div>
+        </transition>
+
+        <!-- ===================== ADD / EDIT MODAL (admin) ===================== -->
+        <transition name="modal">
+        <div class="modal" v-if="showAddForm" @click.self="closeAddForm">
+            <div class="modal-content form-modal">
+                <button class="close-modal" @click="closeAddForm"><i class="fas fa-times"></i></button>
+                <h2 class="form-title">{{ editMode ? 'Edit Record' : 'Add New Record' }}</h2>
+
+                <form @submit.prevent="submitVinyl" class="vinyl-form">
+                    <div class="form-group">
+                        <label for="album">Album <span class="required">*</span></label>
+                        <input type="text" id="album" v-model="newVinyl.album" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="artist">Artist <span class="required">*</span></label>
+                        <input type="text" id="artist" v-model="newVinyl.artist" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="vinylVersion">Version</label>
+                        <input type="text" id="vinylVersion" v-model="newVinyl.vinylVersion">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="upc">UPC</label>
+                            <input type="number" id="upc" v-model="newVinyl.upc">
+                        </div>
+                        <div class="form-group">
+                            <label for="songs">Songs</label>
+                            <input type="number" id="songs" v-model="newVinyl.songs">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="cover">Album Cover <span v-if="!editMode" class="required">*</span></label>
+                        <input type="file" id="cover" @change="selectFile" accept="image/*" :required="!editMode && !newVinyl.vinylCover">
+                        <div v-if="imagePreview" class="image-preview"><img :src="imagePreview" alt="Preview"></div>
+                        <div v-else-if="newVinyl.vinylCover && !selectedFile" class="image-preview"><img :src="newVinyl.vinylCover" alt="Current cover"></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="cancel-button" @click="closeAddForm">Cancel</button>
+                        <button type="submit" class="auth-button" :disabled="isUploading">
+                            <span v-if="isUploading">Uploading...</span>
+                            <span v-else>{{ editMode ? 'Update Record' : 'Add Record' }}</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        </transition>
+
+        <!-- ===================== DELETE CONFIRM ===================== -->
+        <transition name="modal">
+        <div class="modal" v-if="showDeleteConfirm" @click.self="showDeleteConfirm = false">
+            <div class="modal-content confirm-dialog">
+                <h2>Confirm Delete</h2>
+                <p>Delete "{{ vinylToDelete && vinylToDelete.album }}" by {{ vinylToDelete && vinylToDelete.artist }}?</p>
+                <p class="warning">This action cannot be undone.</p>
+                <div class="confirm-actions">
+                    <button class="cancel-button" @click="showDeleteConfirm = false">Cancel</button>
+                    <button class="admin-btn delete" @click="deleteVinyl">Delete</button>
+                </div>
+            </div>
+        </div>
+        </transition>
+
+        <!-- ===================== TOASTS ===================== -->
+        <transition name="toast">
+        <div v-if="errorMessage" class="toast error-toast">
+            {{ errorMessage }}
+            <button @click="errorMessage = ''"><i class="fas fa-times"></i></button>
+        </div>
+        </transition>
+        <transition name="toast">
+        <div v-if="successMessage" class="toast success-toast">
+            {{ successMessage }}
+            <button @click="successMessage = ''"><i class="fas fa-times"></i></button>
+        </div>
+        </transition>
     </div>
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
