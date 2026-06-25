@@ -5,12 +5,20 @@ const model = require('./model'); // ./model this directory where all the functi
 const session = require('express-session');
 const { Model } = require('mongoose');
 const multer = require("multer");
+const path = require("path");
 const { S3Client, ListObjectsV2Command, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 const app = express();
 app.use(express.json()); //using json data
 app.use(cors())
-app.use(express.static('public'));
+// Serve static assets, but don't auto-serve index.html for "/" so we can
+// make the new dashboard the default landing page below.
+app.use(express.static('public', { index: false }));
+
+// Default landing page is the new DiscList dashboard
+app.get('/', function(req, res){
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
 
 
 function authorizeUser (req,res,next){
