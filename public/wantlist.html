@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiscList — Wantlist</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+
+        <!-- Login / signup screens (shared component) -->
+        <dl-auth></dl-auth>
+
+        <!-- ===================== MAIN APP SHELL ===================== -->
+        <div v-if="currentView === 'main'" class="app-shell">
+
+            <dl-sidebar active="wantlist"></dl-sidebar>
+
+            <main class="main">
+
+                <header class="page-head">
+                    <h2 class="page-title">My Wantlist</h2>
+                    <p class="page-sub">The holy grails and daily drivers you're hunting for.</p>
+                </header>
+
+                <!-- Login gate: the wantlist is per-user -->
+                <section class="gate-card card" v-if="!user">
+                    <i class="far fa-heart"></i>
+                    <p>Log in to keep track of the records you're hunting for.</p>
+                    <button class="auth-button gate-btn" @click="showLoginForm">Log in</button>
+                </section>
+
+                <div class="want-layout" v-else>
+                    <!-- ---- Left column ---- -->
+                    <div class="want-main">
+
+                        <!-- Recently Added: the last records hearted (insertion order) -->
+                        <section class="section">
+                            <div class="section-head">
+                                <h3 class="section-title">Recently Added</h3>
+                                <a href="collection.html" class="section-link">Browse Records <i class="fas fa-arrow-right"></i></a>
+                            </div>
+
+                            <div class="recent-grid want-recent-grid">
+                                <article v-for="vinyl in recentWants" :key="vinyl._id" class="recent-card">
+                                    <div class="recent-cover" @click="viewVinylDetails(vinyl)">
+                                        <img v-if="vinyl.vinylCover" :src="vinyl.vinylCover" :alt="vinyl.album">
+                                        <div v-else class="art-placeholder"><i class="fas fa-record-vinyl"></i></div>
+
+                                        <div class="cover-actions">
+                                            <button class="cover-btn" :class="{ active: isPriority(vinyl) }"
+                                                    @click.stop="togglePriority(vinyl)"
+                                                    :title="isPriority(vinyl) ? 'Remove priority' : 'Mark high priority'">
+                                                <i :class="[isPriority(vinyl) ? 'fas' : 'far', 'fa-star']"></i>
+                                            </button>
+                                            <button class="cover-btn active" @click.stop="toggleWantList(vinyl)" title="Remove from wantlist">
+                                                <i class="fas fa-heart"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p class="recent-album">{{ vinyl.album }}</p>
+                                    <p class="recent-artist">{{ vinyl.artist }}</p>
+                                    <span v-if="vinyl.vinylVersion" class="tag small">{{ vinyl.vinylVersion }}</span>
+                                </article>
+
+                                <div v-if="!isLoading && recentWants.length === 0" class="recent-empty">
+                                    Your wantlist is empty — heart records you're hunting for in <a class="auth-link" href="collection.html">the crate</a>.
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- High Priority: records the user starred -->
+                        <section class="section" v-if="priorityWants.length > 0">
+                            <h3 class="section-title">High Priority</h3>
+                            <div class="activity-list">
+                                <div v-for="vinyl in priorityWants" :key="vinyl._id" class="activity-row want-row">
+                                    <div class="want-thumb" @click="viewVinylDetails(vinyl)">
+                                        <img v-if="vinyl.vinylCover" :src="vinyl.vinylCover" :alt="vinyl.album">
+                                        <div v-else class="art-placeholder"><i class="fas fa-record-vinyl"></i></div>
+                                    </div>
+                                    <div class="activity-text" @click="viewVinylDetails(vinyl)">
+                                        <span class="activity-main"><strong>{{ vinyl.album }}</strong></span>
+                                        <span class="activity-sub">{{ vinyl.artist }}</span>
+                                    </div>
+                                    <span v-if="vinyl.vinylVersion" class="tag small">{{ vinyl.vinylVersion }}</span>
+                                    <div class="want-actions">
+                                        <button class="row-btn star active" @click="togglePriority(vinyl)" title="Remove priority">
+                                            <i class="fas fa-star"></i>
+                                        </button>
+                                        <button class="row-btn" @click="toggleCollection(vinyl)" title="Got it! Move to collection">
+                                            <i class="fas fa-plus-circle"></i>
+                                        </button>
+                                        <button class="row-btn" @click="toggleWantList(vinyl)" title="Remove from wantlist">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- The rest of the hunt -->
+                        <section class="section" v-if="otherWants.length > 0">
+                            <h3 class="section-title">The Hunt List</h3>
+                            <div class="activity-list">
+                                <div v-for="vinyl in otherWants" :key="vinyl._id" class="activity-row want-row">
+                                    <div class="want-thumb" @click="viewVinylDetails(vinyl)">
+                                        <img v-if="vinyl.vinylCover" :src="vinyl.vinylCover" :alt="vinyl.album">
+                                        <div v-else class="art-placeholder"><i class="fas fa-record-vinyl"></i></div>
+                                    </div>
+                                    <div class="activity-text" @click="viewVinylDetails(vinyl)">
+                                        <span class="activity-main"><strong>{{ vinyl.album }}</strong></span>
+                                        <span class="activity-sub">{{ vinyl.artist }}</span>
+                                    </div>
+                                    <span v-if="vinyl.vinylVersion" class="tag small">{{ vinyl.vinylVersion }}</span>
+                                    <div class="want-actions">
+                                        <button class="row-btn star" @click="togglePriority(vinyl)" title="Mark high priority">
+                                            <i class="far fa-star"></i>
+                                        </button>
+                                        <button class="row-btn" @click="toggleCollection(vinyl)" title="Got it! Move to collection">
+                                            <i class="fas fa-plus-circle"></i>
+                                        </button>
+                                        <button class="row-btn" @click="toggleWantList(vinyl)" title="Remove from wantlist">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- ---- Right column: top priority want ---- -->
+                    <aside class="priority-card card" v-if="featuredWant">
+                        <span class="priority-label"><i class="fas fa-star"></i> Priority Want</span>
+                        <div class="priority-cover" @click="viewVinylDetails(featuredWant)">
+                            <img v-if="featuredWant.vinylCover" :src="featuredWant.vinylCover" :alt="featuredWant.album">
+                            <div v-else class="art-placeholder"><i class="fas fa-record-vinyl"></i></div>
+                        </div>
+                        <h3 class="priority-album">{{ featuredWant.album }}</h3>
+                        <p class="priority-artist">{{ featuredWant.artist }}</p>
+                        <span v-if="featuredWant.vinylVersion" class="tag small">{{ featuredWant.vinylVersion }}</span>
+                        <button class="auth-button gate-btn" @click="toggleCollection(featuredWant)">
+                            <i class="fas fa-plus-circle"></i> Found it — add to collection
+                        </button>
+                    </aside>
+
+                    <aside class="priority-card card empty-priority" v-else-if="wantlistVinyls.length > 0">
+                        <span class="priority-label"><i class="far fa-star"></i> Priority Want</span>
+                        <p class="priority-hint">Star a record on your wantlist to feature your #1 grail here.</p>
+                    </aside>
+                </div>
+            </main>
+        </div>
+
+        <!-- Shared modals + toasts -->
+        <dl-modals></dl-modals>
+        <dl-toasts></dl-toasts>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="disclist-core.js"></script>
+    <script src="wantlist.js"></script>
+</body>
+</html>
