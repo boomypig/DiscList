@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiscList — My Collection</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+
+        <!-- Login / signup screens (shared component) -->
+        <dl-auth></dl-auth>
+
+        <!-- ===================== MAIN APP SHELL ===================== -->
+        <div v-if="currentView === 'main'" class="app-shell">
+
+            <dl-sidebar active="collection"></dl-sidebar>
+
+            <main class="main">
+
+                <!-- Crate toolbar: search + filters, all fed by real catalog data -->
+                <section class="crate-toolbar">
+                    <div class="search-crate">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input type="text" v-model="searchQuery" placeholder="Search your crate...">
+                    </div>
+
+                    <div class="filter-selects">
+                        <select class="filter-select" v-model="filterArtist">
+                            <option value="">Artist: All</option>
+                            <option v-for="artist in uniqueArtists" :key="artist" :value="artist">{{ artist }}</option>
+                        </select>
+                        <select class="filter-select" v-model="filterVersion">
+                            <option value="">Version: All</option>
+                            <option v-for="version in uniqueVersions" :key="version" :value="version">{{ version }}</option>
+                        </select>
+                        <select class="filter-select" v-model="sortBy">
+                            <option value="newest">Sort: Newest</option>
+                            <option value="albumAsc">Sort: Album A–Z</option>
+                            <option value="artistAsc">Sort: Artist A–Z</option>
+                        </select>
+                    </div>
+                </section>
+
+                <!-- All Records vs My Collection -->
+                <section class="tab-pills">
+                    <button class="pill" :class="{ active: activeTab === 'all' }" @click="setTab('all')">
+                        All Records <span class="pill-count">{{ vinyls.length }}</span>
+                    </button>
+                    <button class="pill" :class="{ active: activeTab === 'mine' }" @click="setTab('mine')">
+                        My Collection <span v-if="user" class="pill-count">{{ userCollection.length }}</span>
+                    </button>
+                </section>
+
+                <!-- Active filter chips -->
+                <section class="chip-row" v-if="hasActiveFilters">
+                    <span class="chip-label">Active:</span>
+                    <span class="chip" v-if="searchQuery">
+                        "{{ searchQuery }}" <button @click="searchQuery = ''"><i class="fas fa-times"></i></button>
+                    </span>
+                    <span class="chip" v-if="filterArtist">
+                        {{ filterArtist }} <button @click="filterArtist = ''"><i class="fas fa-times"></i></button>
+                    </span>
+                    <span class="chip" v-if="filterVersion">
+                        {{ filterVersion }} <button @click="filterVersion = ''"><i class="fas fa-times"></i></button>
+                    </span>
+                </section>
+
+                <!-- Login gate for the My Collection tab -->
+                <section class="gate-card card" v-if="activeTab === 'mine' && !user">
+                    <i class="fas fa-record-vinyl"></i>
+                    <p>Log in to see your collection.</p>
+                    <button class="auth-button gate-btn" @click="showLoginForm">Log in</button>
+                </section>
+
+                <!-- The crate -->
+                <section class="section" v-else>
+                    <div class="recent-grid crate-grid">
+                        <article v-for="vinyl in displayedVinyls" :key="vinyl._id" class="recent-card">
+                            <div class="recent-cover" @click="viewVinylDetails(vinyl)">
+                                <img v-if="vinyl.vinylCover" :src="vinyl.vinylCover" :alt="vinyl.album">
+                                <div v-else class="art-placeholder"><i class="fas fa-record-vinyl"></i></div>
+
+                                <div class="cover-actions">
+                                    <button class="cover-btn" :class="{ active: isInCollection(vinyl) }"
+                                            @click.stop="toggleCollection(vinyl)"
+                                            :title="isInCollection(vinyl) ? 'In collection' : 'Add to collection'">
+                                        <i :class="['fas', isInCollection(vinyl) ? 'fa-check' : 'fa-plus']"></i>
+                                    </button>
+                                    <button class="cover-btn" :class="{ active: isInWantList(vinyl) }"
+                                            @click.stop="toggleWantList(vinyl)"
+                                            :title="isInWantList(vinyl) ? 'In wantlist' : 'Add to wantlist'">
+                                        <i :class="[isInWantList(vinyl) ? 'fas' : 'far', 'fa-heart']"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="recent-album">{{ vinyl.album }}</p>
+                            <p class="recent-artist">{{ vinyl.artist }}</p>
+                            <span v-if="vinyl.vinylVersion" class="tag small">{{ vinyl.vinylVersion }}</span>
+                        </article>
+
+                        <template v-if="isLoading">
+                            <article v-for="n in 10" :key="'sk'+n" class="recent-card skeleton">
+                                <div class="recent-cover skeleton-block"></div>
+                                <div class="skeleton-line"></div>
+                                <div class="skeleton-line short"></div>
+                            </article>
+                        </template>
+
+                        <div v-if="!isLoading && displayedVinyls.length === 0" class="recent-empty">
+                            <span v-if="searchQuery || filterArtist || filterVersion">No records match your filters.</span>
+                            <span v-else-if="activeTab === 'mine'">Your collection is empty — flip through All Records and add some.</span>
+                            <span v-else>No records yet.</span>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Shared modals + toasts -->
+        <dl-modals></dl-modals>
+        <dl-toasts></dl-toasts>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="disclist-core.js"></script>
+    <script src="collection.js"></script>
+</body>
+</html>
