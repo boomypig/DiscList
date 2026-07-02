@@ -14,125 +14,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
-    <div id="dashboard">
+    <div id="app">
 
-        <!-- ===================== AUTH: LOGIN ===================== -->
-        <div v-if="currentView === 'login'" class="auth-page">
-            <div class="auth-box">
-                <button type="button" class="auth-back" @click="backToBrowsing"><i class="fas fa-arrow-left"></i> Back</button>
-                <h1 class="brand auth-brand">DiscList</h1>
-                <p class="auth-tagline">Find, collect and share your favorite vinyl records</p>
-
-                <form @submit.prevent="login" class="auth-form">
-                    <div class="form-group">
-                        <label for="loginEmail">Email</label>
-                        <input type="email" id="loginEmail" v-model="loginData.email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="loginPassword">Password</label>
-                        <input type="password" id="loginPassword" v-model="loginData.password" required>
-                    </div>
-                    <div v-if="loginError" class="error-message">{{ loginError }}</div>
-                    <button type="submit" class="auth-button" :disabled="isLoggingIn">
-                        <span v-if="isLoggingIn"><i class="fas fa-circle-notch fa-spin"></i> Logging in...</span>
-                        <span v-else>Log in</span>
-                    </button>
-                </form>
-                <p class="auth-redirect">Don't have an account?
-                    <a href="#" @click.prevent="currentView = 'signup'" class="auth-link">Sign up</a>
-                </p>
-            </div>
-        </div>
-
-        <!-- ===================== AUTH: SIGNUP ===================== -->
-        <div v-if="currentView === 'signup'" class="auth-page">
-            <div class="auth-box">
-                <button type="button" class="auth-back" @click="backToBrowsing"><i class="fas fa-arrow-left"></i> Back</button>
-                <h1 class="brand auth-brand">DiscList</h1>
-                <p class="auth-tagline">Join the vinyl revolution</p>
-
-                <form @submit.prevent="signup" class="auth-form">
-                    <div class="form-group">
-                        <label for="firstName">First Name</label>
-                        <input type="text" id="firstName" v-model="signupData.firstName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="lastName">Last Name</label>
-                        <input type="text" id="lastName" v-model="signupData.lastName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="userName">Username</label>
-                        <input type="text" id="userName" v-model="signupData.userName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="signupEmail">Email</label>
-                        <input type="email" id="signupEmail" v-model="signupData.email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="signupPassword">Password</label>
-                        <input type="password" id="signupPassword" v-model="signupData.password" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirm Password</label>
-                        <input type="password" id="confirmPassword" v-model="signupData.confirmPassword" required>
-                    </div>
-                    <div v-if="signupError" class="error-message">{{ signupError }}</div>
-                    <button type="submit" class="auth-button" :disabled="isSigningUp">
-                        <span v-if="isSigningUp"><i class="fas fa-circle-notch fa-spin"></i> Creating...</span>
-                        <span v-else>Create Account</span>
-                    </button>
-                </form>
-                <p class="auth-redirect">Already have an account?
-                    <a href="#" @click.prevent="currentView = 'login'" class="auth-link">Log in</a>
-                </p>
-            </div>
-        </div>
+        <!-- Login / signup screens (shared component) -->
+        <dl-auth></dl-auth>
 
         <!-- ===================== MAIN APP SHELL ===================== -->
         <div v-if="currentView === 'main'" class="app-shell">
 
-            <!-- SIDEBAR -->
-            <aside class="sidebar">
-                <h1 class="brand">DiscList</h1>
+            <dl-sidebar active="dashboard"></dl-sidebar>
 
-                <div class="user-card">
-                    <div class="user-avatar"><i class="fas fa-record-vinyl"></i></div>
-                    <div class="user-meta">
-                        <span class="user-name">{{ displayName }}</span>
-                        <span class="user-count">{{ totalRecords }} Records</span>
-                    </div>
-                </div>
-
-                <nav class="nav">
-                    <a href="#" class="nav-item active">
-                        <i class="fas fa-table-cells-large"></i> Dashboard
-                    </a>
-                    <a href="#" class="nav-item">
-                        <i class="far fa-circle-dot"></i> My Collection
-                    </a>
-                    <a href="#" class="nav-item">
-                        <i class="far fa-heart"></i> Wantlist
-                    </a>
-                </nav>
-
-                <div class="sidebar-spacer"></div>
-
-                <button class="add-vinyl-btn" @click="handleAddVinyl">
-                    <i class="fas fa-plus"></i> Add New Vinyl
-                </button>
-
-                <div class="sidebar-footer">
-                    <a href="#" v-if="!user" class="footer-link" @click.prevent="showLoginForm"><i class="fas fa-right-to-bracket"></i> Login</a>
-                    <a href="#" v-if="user" class="footer-link" @click.prevent="logout"><i class="fas fa-right-from-bracket"></i> Logout</a>
-                    <a href="#" class="footer-link"><i class="fas fa-gear"></i> Settings</a>
-                    <a href="#" class="footer-link"><i class="fas fa-circle-question"></i> Support</a>
-                </div>
-            </aside>
-
-            <!-- MAIN -->
             <main class="main">
 
-                <!-- Top row -->
+                <!-- Top row: Now Spinning + stat cards -->
                 <section class="top-row">
                     <div class="now-spinning card" v-if="featured">
                         <div class="spinning-art" @click="viewVinylDetails(featured)">
@@ -197,7 +91,7 @@
                 <section class="section">
                     <div class="section-head">
                         <h3 class="section-title">Recently Added</h3>
-                        <a href="#" class="section-link">View Collection <i class="fas fa-arrow-right"></i></a>
+                        <a href="collection.html" class="section-link">View Collection <i class="fas fa-arrow-right"></i></a>
                     </div>
 
                     <div class="recent-grid">
@@ -257,138 +151,13 @@
             </main>
         </div>
 
-        <!-- ===================== DETAIL MODAL ===================== -->
-        <transition name="modal">
-        <div class="modal" v-if="selectedVinyl" @click.self="selectedVinyl = null">
-            <div class="modal-content">
-                <button class="close-modal" @click="selectedVinyl = null"><i class="fas fa-times"></i></button>
-                <div class="detail-view">
-                    <div class="detail-cover">
-                        <img v-if="selectedVinyl.vinylCover" :src="selectedVinyl.vinylCover" :alt="selectedVinyl.album">
-                        <div v-else class="art-placeholder"><i class="fas fa-record-vinyl"></i></div>
-                    </div>
-                    <div class="detail-info">
-                        <h2>{{ selectedVinyl.album }}</h2>
-                        <p class="detail-artist">{{ selectedVinyl.artist }}</p>
-
-                        <div class="tag-row" v-if="selectedVinyl.vinylVersion">
-                            <span class="tag">{{ selectedVinyl.vinylVersion }}</span>
-                        </div>
-
-                        <div v-if="selectedVinyl.songs" class="detail-row"><span class="detail-label">Songs</span><span>{{ selectedVinyl.songs }}</span></div>
-                        <div v-if="selectedVinyl.upc" class="detail-row"><span class="detail-label">UPC</span><span>{{ selectedVinyl.upc }}</span></div>
-
-                        <div class="detail-actions">
-                            <button class="detail-btn" :class="{ active: isInCollection(selectedVinyl) }" @click="toggleCollection(selectedVinyl)">
-                                <i :class="['fas', isInCollection(selectedVinyl) ? 'fa-check-circle' : 'fa-plus-circle']"></i>
-                                {{ isInCollection(selectedVinyl) ? 'In Collection' : 'Add to Collection' }}
-                            </button>
-                            <button class="detail-btn" :class="{ active: isInWantList(selectedVinyl) }" @click="toggleWantList(selectedVinyl)">
-                                <i :class="[isInWantList(selectedVinyl) ? 'fas' : 'far', 'fa-heart']"></i>
-                                {{ isInWantList(selectedVinyl) ? 'In Wantlist' : 'Add to Wantlist' }}
-                            </button>
-                        </div>
-
-                        <!-- Rating (only for items in the collection) -->
-                        <div v-if="user && isInCollection(selectedVinyl)" class="rating-container">
-                            <p class="rating-label">Your rating</p>
-                            <div class="rating-stars">
-                                <i v-for="n in 5" :key="n" class="fas fa-star"
-                                   :class="{ filled: n <= (userRatings[selectedVinyl._id] || 0) }"
-                                   @click="rateVinyl(selectedVinyl, n)"></i>
-                            </div>
-                        </div>
-
-                        <!-- Admin controls -->
-                        <div v-if="isAdmin" class="admin-detail-actions">
-                            <button class="admin-btn edit" @click="editVinyl(selectedVinyl)"><i class="fas fa-edit"></i> Edit</button>
-                            <button class="admin-btn delete" @click="confirmDeleteVinyl(selectedVinyl)"><i class="fas fa-trash"></i> Delete</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        </transition>
-
-        <!-- ===================== ADD / EDIT MODAL (admin) ===================== -->
-        <transition name="modal">
-        <div class="modal" v-if="showAddForm" @click.self="closeAddForm">
-            <div class="modal-content form-modal">
-                <button class="close-modal" @click="closeAddForm"><i class="fas fa-times"></i></button>
-                <h2 class="form-title">{{ editMode ? 'Edit Record' : 'Add New Record' }}</h2>
-
-                <form @submit.prevent="submitVinyl" class="vinyl-form">
-                    <div class="form-group">
-                        <label for="album">Album <span class="required">*</span></label>
-                        <input type="text" id="album" v-model="newVinyl.album" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="artist">Artist <span class="required">*</span></label>
-                        <input type="text" id="artist" v-model="newVinyl.artist" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="vinylVersion">Version</label>
-                        <input type="text" id="vinylVersion" v-model="newVinyl.vinylVersion">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="upc">UPC</label>
-                            <input type="number" id="upc" v-model="newVinyl.upc">
-                        </div>
-                        <div class="form-group">
-                            <label for="songs">Songs</label>
-                            <input type="number" id="songs" v-model="newVinyl.songs">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="cover">Album Cover <span v-if="!editMode" class="required">*</span></label>
-                        <input type="file" id="cover" @change="selectFile" accept="image/*" :required="!editMode && !newVinyl.vinylCover">
-                        <div v-if="imagePreview" class="image-preview"><img :src="imagePreview" alt="Preview"></div>
-                        <div v-else-if="newVinyl.vinylCover && !selectedFile" class="image-preview"><img :src="newVinyl.vinylCover" alt="Current cover"></div>
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="cancel-button" @click="closeAddForm">Cancel</button>
-                        <button type="submit" class="auth-button" :disabled="isUploading">
-                            <span v-if="isUploading">Uploading...</span>
-                            <span v-else>{{ editMode ? 'Update Record' : 'Add Record' }}</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-        </transition>
-
-        <!-- ===================== DELETE CONFIRM ===================== -->
-        <transition name="modal">
-        <div class="modal" v-if="showDeleteConfirm" @click.self="showDeleteConfirm = false">
-            <div class="modal-content confirm-dialog">
-                <h2>Confirm Delete</h2>
-                <p>Delete "{{ vinylToDelete && vinylToDelete.album }}" by {{ vinylToDelete && vinylToDelete.artist }}?</p>
-                <p class="warning">This action cannot be undone.</p>
-                <div class="confirm-actions">
-                    <button class="cancel-button" @click="showDeleteConfirm = false">Cancel</button>
-                    <button class="admin-btn delete" @click="deleteVinyl">Delete</button>
-                </div>
-            </div>
-        </div>
-        </transition>
-
-        <!-- ===================== TOASTS ===================== -->
-        <transition name="toast">
-        <div v-if="errorMessage" class="toast error-toast">
-            {{ errorMessage }}
-            <button @click="errorMessage = ''"><i class="fas fa-times"></i></button>
-        </div>
-        </transition>
-        <transition name="toast">
-        <div v-if="successMessage" class="toast success-toast">
-            {{ successMessage }}
-            <button @click="successMessage = ''"><i class="fas fa-times"></i></button>
-        </div>
-        </transition>
+        <!-- Shared modals + toasts -->
+        <dl-modals></dl-modals>
+        <dl-toasts></dl-toasts>
     </div>
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="disclist-core.js"></script>
     <script src="dashboard.js"></script>
 </body>
 </html>
