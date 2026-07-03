@@ -32,7 +32,6 @@ https://www.figma.com/design/paPig7Atemq2SUMG7gYDiI/DiscList?node-id=0-1&t=WbnsS
 ### Frontend
 - **Vue.js**: Frontend framework for building the user interface
 - **HTML/CSS**: Structure and styling of the application
-- **Font Awesome**: Icons for an improved user experience
 
 ### Backend
 - **Node.js**: JavaScript runtime for the server
