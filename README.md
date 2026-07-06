@@ -79,4 +79,4 @@ https://www.figma.com/design/paPig7Atemq2SUMG7gYDiI/DiscList?node-id=0-1&t=WbnsS
 The application uses the browser's local storage to maintain:
 - User's collection of vinyl records
 - User's want list
-- User's ratings of records (1–5 stars, set from a record's detail view)
+- User's ratings of records (1–5 stars)
