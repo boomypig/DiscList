@@ -1,7 +1,7 @@
 # DiscList - Vinyl Record Collection Web App
 
 ## Overview
-DiscList is a web application for vinyl record enthusiasts to catalog, track, and share their vinyl collections. The application allows users to browse records, create personal collections, maintain want lists, and (for admins) manage the record database.
+DiscList is a web application for vinyl record enthusiasts to catalog, track, and share their vinyl collections. The application allows users to browse records, create personal collections, maintain want lists.
 
 website URL: 
 https://disklist-0c5x.onrender.com/
